@@ -23,16 +23,16 @@ export default () => {
           setGreeting(
             await invoke("greet", {
               name: text,
-            })
+            }),
           );
         }}
       >
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
-          className="p-1 border border-black"
+          className="border border-black p-1"
         />
-        <button className="ml-2 p-1 border border-black">Submit</button>
+        <button className="ml-2 border border-black p-1">Submit</button>
 
         {greeting && <p>Returned: {greeting}</p>}
       </form>
