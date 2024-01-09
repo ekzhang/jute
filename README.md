@@ -8,20 +8,20 @@ real-time multiplayer.
 
 > [!IMPORTANT]
 >
-> Nothing here is actually implemented yet, I just feel the need to write down
-> an aspirational view of where I'm going.
+> Nothing here is actually implemented yet; I just feel the need to write down
+> and continuously evolve an aspiration of where I'm going.
 
 ## Why?
 
-Notebooks are tremendously important to modern data science, education, and
-research. They should be a first-class document type with excellent editors that
-_feel effortless_.
+Notebooks are critical to modern data science, education, and research. They
+should be a first-class document type that _feels effortless_.
 
 How effortless? No fiddling around with `pip install`, slow load times, insecure
 browser contexts, port-forwarding, setting up kernels, `jupyter lab build`,
 unnecessary context menus, or forgetting to hit "Save".
 
-I just want to write code interactively, and to share interactive documents.
+I just want to **write code interactively**, and to **share interactive
+documents**.
 
 > Jupyter notebooks remain the best option for exploratory data analysis,
 > reproducible documents, sharing of results, tutorials, etc.
@@ -40,8 +40,8 @@ I just want to write code interactively, and to share interactive documents.
 Tauri, React, Rust.
 
 Making an alternate frontend is only possible due to the excellent engineering
-work of the Jupyter Project to build its software in composable, well-specified
-parts.
+effort of the Jupyter Project to build its software in composable,
+well-specified parts.
 
 ## Author
 
