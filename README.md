@@ -1,7 +1,5 @@
-# Tauri + Vanilla TS
+# Jute
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
+A beautiful notebook for interactive computing. Double-click to open any Jupyter file in a native, streamlined desktop app. Run code on powerful remote kernels, and collaborate with others in real-time.
 
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+Work-in-progress by Eric.
