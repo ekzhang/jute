@@ -1,0 +1,21 @@
+[package]
+name = "jute"
+version = "0.0.0"
+description = "A native app for interactive computing in Jupyter Notebooks"
+authors = ["Eric Zhang <ekzhang1@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/ekzhang/jute.git"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sysinfo = "0.30.3"
+tauri = { version = "1.5", features = ["shell-open"] }
+tokio = { version = "1.35.1", features = ["full"] }
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
