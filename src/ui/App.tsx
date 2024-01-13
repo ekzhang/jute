@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import { useEffect, useState } from "react";
 
+import Notebook from "./Notebook";
+
 export default () => {
   const [text, setText] = useState("");
   const [greeting, setGreeting] = useState("");
@@ -20,11 +22,7 @@ export default () => {
       <form
         onSubmit={async (event) => {
           event.preventDefault();
-          setGreeting(
-            await invoke("greet", {
-              name: text,
-            }),
-          );
+          setGreeting(await invoke("greet", { name: text }));
         }}
       >
         <input
@@ -38,6 +36,8 @@ export default () => {
       </form>
 
       <p>CPU Usage: {cpuUsage.toFixed(2)}%</p>
+
+      <Notebook />
     </main>
   );
 };
