@@ -40,7 +40,7 @@ documents**.
 > – [K. Jarrod Millman and Fernando Pérez](https://osf.io/h9gsd)
 
 Jute is specifically designed to work as a native app. That means file
-maangement is left to the operating system; we're not going to embed a
+management is left to the operating system; we're not going to embed a
 half-functional windowing system, folder viewer, or file editor.
 
 In exchange, you'll get an application that starts up instantly, with a heavy
