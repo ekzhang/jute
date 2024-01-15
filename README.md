@@ -35,6 +35,26 @@ documents**.
 >
 > – [K. Jarrod Millman and Fernando Pérez](https://osf.io/h9gsd)
 
+### Related work
+
+The Jupyter project is in widespread use and has a vibrant open-source
+ecosystem. Jute does not aim to reproduce _all_ features of Jupyter, only the
+most frequently used ones. The goal of Jute is to reimagine notebook design, so
+some elements may be simplified to emphasize more important user flows.
+
+These existing projects take different approaches to interface design, but still
+may be of interest to you:
+
+- [JupyterLab Desktop](https://github.com/jupyterlab/jupyterlab-desktop) —
+  Official Jupyter Lab desktop application, based on Electron.
+- [VS Code Jupyter extension](https://github.com/Microsoft/vscode-jupyter) —
+  Notebook editor inside VS Code.
+- [nbterm](https://github.com/davidbrochart/nbterm) — Terminal user interface
+  for Jupyter.
+
+In most cases Jute is simpler, more streamlined, and faster than alternatives,
+but it is less compatible with the existing Jupyter ecosystem.
+
 ## Technical
 
 Tauri, React, Rust.
