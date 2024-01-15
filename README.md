@@ -61,8 +61,8 @@ focus on the developer experience. You and the computer — as a thinking tool.
    default. It's a pain to configure these for Jupyter (so many errors!), and it
    should really be easier.
 4. **Aesthetic minimalism.** Jute should be beautiful. But it should also be
-   minimal, so you can focus on writing code. Think of a new file in a code
-   editor — a blank slate for creativity.
+   minimal, so you can focus on getting things done without distractions. Think
+   of a new file in a code editor — a blank slate for creativity.
 
 ### Related work
 
