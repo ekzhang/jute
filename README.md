@@ -80,6 +80,8 @@ to you:
   Notebook editor inside VS Code.
 - [nbterm](https://github.com/davidbrochart/nbterm) — Terminal user interface
   for Jupyter.
+- [Juno](https://apps.apple.com/us/app/juno-jupyter-python-ide/id1462586500?platform=ipad)
+  — Python notebook editor for iPhone and iPad.
 
 In most cases Jute is simpler, more streamlined, and faster than alternatives,
 but it may be less compatible with the existing Jupyter ecosystem.
