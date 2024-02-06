@@ -3,7 +3,5 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-// use anyhow::Result;
-// use zeromq::{DealerSocket, Socket, SubSocket};
-
 pub mod environment;
+pub mod kernel;

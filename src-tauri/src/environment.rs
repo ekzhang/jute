@@ -10,11 +10,14 @@ use futures_util::future::join_all;
 use serde::Deserialize;
 use tokio::fs;
 
+/// The path separator for the current platform.
+pub const SEP: &str = if cfg!(windows) { "\\" } else { "/" };
+
 /// Information parsed from the `kernel.json` file.
 ///
 /// See <https://jupyter-client.readthedocs.io/en/latest/kernels.html#kernel-specs>
 /// for more information about the kernel spec format.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct KernelSpec {
     /// List of command-line arguments to start the kernel.
     pub argv: Vec<String>,
@@ -112,7 +115,7 @@ async fn list_kernels_from_path(path: &str) -> Vec<(PathBuf, KernelSpec)> {
 /// Get the configured directory for data files.
 pub fn data_dir() -> String {
     if let Ok(jupyter_data_dir) = env::var("JUPYTER_DATA_DIR") {
-        return jupyter_data_dir;
+        return jupyter_data_dir.trim_end_matches(SEP).into();
     }
 
     cfg_if::cfg_if! {
@@ -134,14 +137,7 @@ pub fn data_dir() -> String {
 /// Get the configured directory where runtime connection files are stored.
 pub fn runtime_dir() -> String {
     match env::var("JUPYTER_RUNTIME_DIR") {
-        Ok(jupyter_runtime_dir) => jupyter_runtime_dir,
-        Err(_) => {
-            let d = data_dir();
-            if cfg!(windows) {
-                d + "\\runtime"
-            } else {
-                d + "/runtime"
-            }
-        }
+        Ok(jupyter_runtime_dir) => jupyter_runtime_dir.trim_end_matches(SEP).into(),
+        Err(_) => data_dir() + SEP + "runtime",
     }
 }
