@@ -1,6 +1,6 @@
 //! An example that lists all available kernels.
 
-use jute::environment;
+use jute::server::environment;
 
 #[tokio::main]
 async fn main() {

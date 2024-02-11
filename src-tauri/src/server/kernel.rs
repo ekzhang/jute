@@ -9,7 +9,7 @@ use tokio::net::TcpListener;
 use uuid::Uuid;
 use zeromq::Socket;
 
-use crate::environment::{self, KernelSpec};
+use super::environment::{self, KernelSpec};
 
 /// Represents a connection to an active kernel.
 pub struct Kernel {
