@@ -16,6 +16,12 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "window": {
+        "create": true,
+        "center": true,
+        "requestUserAttention": true,
+        "startDragging": true
       }
     },
     "bundle": {
@@ -35,12 +41,15 @@
     },
     "windows": [
       {
+        "width": 720,
+        "height": 800,
         "fullscreen": false,
         "resizable": true,
         "title": "Jute",
-        "width": 800,
-        "height": 600
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
-    ]
+    ],
+    "macOSPrivateApi": true
   }
 }

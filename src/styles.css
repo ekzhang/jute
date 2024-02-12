@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 @layer base {
-  /* Mimic native apps more, which do not have selectable text by default. */
   body {
+    /* Mimic native apps, which do not have selectable text by default. */
     user-select: none;
+
+    /* Prevent horizontal and vertical overscroll on elements. */
+    overscroll-behavior: none;
+    overflow: hidden;
   }
 }

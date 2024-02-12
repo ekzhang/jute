@@ -17,7 +17,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10.8"
 sysinfo = "0.30.3"
-tauri = { version = "1.5", features = ["shell-open"] }
+tauri = { version = "1.5", features = ["macos-private-api", "window-request-user-attention", "window-create", "window-center", "window-start-dragging", "shell-open"] }
+thiserror = "1.0.57"
 tokio = { version = "1.35.1", features = ["full"] }
 uuid = { version = "1.7.0", features = ["v4"] }
 zeromq = "0.3.5"

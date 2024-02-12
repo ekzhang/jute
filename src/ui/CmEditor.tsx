@@ -4,39 +4,49 @@ import {
   closeBracketsKeymap,
   completionKeymap,
 } from "@codemirror/autocomplete";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+} from "@codemirror/commands";
 import { python } from "@codemirror/lang-python";
 import {
   bracketMatching,
   defaultHighlightStyle,
-  foldGutter,
   foldKeymap,
   indentOnInput,
   indentUnit,
   syntaxHighlighting,
 } from "@codemirror/language";
 import { lintKeymap } from "@codemirror/lint";
-import { EditorState } from "@codemirror/state";
+import { EditorState, Prec } from "@codemirror/state";
 import {
   EditorView,
   crosshairCursor,
   drawSelection,
   dropCursor,
-  highlightActiveLine,
-  highlightActiveLineGutter,
   highlightSpecialChars,
   keymap,
-  lineNumbers,
   rectangularSelection,
 } from "@codemirror/view";
 import { useContext, useEffect, useRef } from "react";
 
-import NotebookContext from "./NotebookContext";
+import { NotebookContext } from "./Notebook";
 
 type CmEditorProps = {
   /** A globally unique identifier for the editor. */
   editorId: string;
 };
+
+const editorTheme = EditorView.theme({
+  "&": {
+    fontSize: "14px",
+  },
+  "&.cm-focused": {
+    outline: "none",
+  },
+});
 
 export default ({ editorId }: CmEditorProps) => {
   const notebook = useContext(NotebookContext)!;
@@ -46,11 +56,8 @@ export default ({ editorId }: CmEditorProps) => {
   useEffect(() => {
     const editor = new EditorView({
       extensions: [
-        lineNumbers(),
-        highlightActiveLineGutter(),
         highlightSpecialChars(),
         history(),
-        foldGutter(),
         drawSelection(),
         dropCursor(),
         EditorState.allowMultipleSelections.of(true),
@@ -61,7 +68,6 @@ export default ({ editorId }: CmEditorProps) => {
         autocompletion(),
         rectangularSelection(),
         crosshairCursor(),
-        highlightActiveLine(),
         keymap.of([
           ...closeBracketsKeymap,
           ...defaultKeymap,
@@ -69,23 +75,44 @@ export default ({ editorId }: CmEditorProps) => {
           ...foldKeymap,
           ...completionKeymap,
           ...lintKeymap,
+          indentWithTab,
         ]),
+
+        Prec.highest(
+          keymap.of([
+            {
+              key: "Shift-Enter",
+              run: () => {
+                notebook.execute(editorId);
+                return true;
+              },
+            },
+            {
+              key: "Mod-Enter",
+              run: () => {
+                notebook.execute(editorId);
+                return true;
+              },
+            },
+          ]),
+        ),
 
         python(),
         indentUnit.of("    "),
         EditorState.tabSize.of(4),
+        editorTheme,
       ],
       parent: containerEl.current!,
     });
 
-    if (notebook.editor.has(editorId)) {
+    if (notebook.editors.has(editorId)) {
       console.warn(`Registering duplicate editorId: ${editorId}`);
     }
 
     console.log("hi");
-    notebook.editor.set(editorId, editor);
+    notebook.editors.set(editorId, editor);
     return () => {
-      notebook.editor.delete(editorId);
+      notebook.editors.delete(editorId);
     };
   }, [editorId]);
 
