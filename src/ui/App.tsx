@@ -13,18 +13,7 @@ export default () => {
         <span className="pointer-events-none">{title}</span>
       </div>
 
-      {/* Main notebook */}
-      <div className="grid h-full overflow-y-auto md:grid-cols-[600px,minmax(0,1fr)] lg:grid-cols-[800px,minmax(0,1fr)]">
-        <div className="px-4 py-16">
-          <NotebookView />
-        </div>
-        <div
-          className="hidden border-l border-zinc-200 bg-zinc-100 md:block"
-          data-tauri-drag-region
-        >
-          <p></p>
-        </div>
-      </div>
+      <NotebookView />
     </main>
   );
 };

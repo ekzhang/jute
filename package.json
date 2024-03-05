@@ -19,6 +19,7 @@
     "@codemirror/view": "^6.23.0",
     "@tauri-apps/api": "^1.5.2",
     "clsx": "^2.1.0",
+    "lucide-react": "^0.331.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "uuid": "^9.0.1"

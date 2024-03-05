@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useReducer } from "react";
 
-import CmEditor from "./CmEditor";
 import { Notebook, NotebookContext } from "./Notebook";
-import OutputView from "./OutputView";
+import NotebookCells from "./NotebookCells";
 
 export default () => {
   const [, rerender] = useReducer((x) => x + 1, 0);
@@ -33,26 +32,12 @@ export default () => {
 
   return (
     <NotebookContext.Provider value={notebook}>
-      <div className="space-y-6">
-        <div className="rounded-md border border-zinc-200 p-4">
-          <CmEditor editorId="1" />
-          {notebook.outputs.get("1") && (
-            <>
-              <div className="my-4 border-t border-zinc-200"></div>
-              <OutputView value={notebook.outputs.get("1")} />
-            </>
-          )}
-        </div>
-
-        <div className="rounded-md border border-zinc-200 p-4">
-          <CmEditor editorId="2" />
-          {notebook.outputs.get("2") && (
-            <>
-              <div className="my-4 border-t border-zinc-200"></div>
-              <OutputView value={notebook.outputs.get("2")} />
-            </>
-          )}
-        </div>
+      <div className="grid h-full grid-cols-[1fr,200px] overflow-y-auto">
+        <NotebookCells />
+        <div
+          className="border-l border-zinc-200 bg-zinc-100"
+          data-tauri-drag-region
+        />
       </div>
     </NotebookContext.Provider>
   );
