@@ -5,6 +5,7 @@
 
 use std::io;
 
+pub mod kernel_client;
 pub mod server;
 
 /// A serializable error type for application errors.
