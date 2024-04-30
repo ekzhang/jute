@@ -11,6 +11,8 @@ use serde::Deserialize;
 use serde_json::json;
 use time::OffsetDateTime;
 
+pub mod wire_protocol;
+
 /// An active Jupyter kernel, ready to take new commands.
 pub struct ActiveKernel {
     client: JupyterClient,
@@ -39,7 +41,7 @@ impl ActiveKernel {
 
     /// Run a block of code input on the kernel.
     pub async fn run_input(&self, _code: &str) -> Result<()> {
-        todo!()
+        todo!("[]/api/kernels/[]/channels")
     }
 }
 

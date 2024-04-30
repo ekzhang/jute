@@ -79,8 +79,8 @@ def encode_msg(message_type: str, content: dict[str, Any]):
     }
     msg_list: list[bytes] = [
         json.dumps(header).encode(),
-        json.dumps({}).encode(),  # parent_header
-        json.dumps({}).encode(),  # metadata
+        json.dumps(None).encode(),  # parent_header
+        json.dumps(None).encode(),  # metadata
         json.dumps(content).encode(),
     ]
     mac = hmac.new(digest_key.encode(), digestmod=hashlib.sha256)
