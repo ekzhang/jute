@@ -14,6 +14,10 @@ pub enum Error {
     /// An error occurred while starting a subprocess.
     #[error("subprocess failed to start: {0}")]
     Subprocess(io::Error),
+
+    /// Disconnected while communicating with a kernel.
+    #[error("disconnected from the kernel")]
+    KernelDisconnect,
 }
 
 impl serde::Serialize for Error {

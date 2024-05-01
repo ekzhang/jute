@@ -75,6 +75,33 @@ pub enum KernelMessageType {
 
     /// Reply with debugger status.
     DebugReply,
+
+    /// Streams of output (stdout, stderr) from the kernel.
+    Stream,
+
+    /// Bring back data to be displayed in frontends.
+    DisplayData,
+
+    /// Update display data with new information.
+    UpdateDisplayData,
+
+    /// Re-broadcast of code in ExecuteRequest.
+    ExecuteInput,
+
+    /// Results of a code execution.
+    ExecuteResult,
+
+    /// When an error occurs during code execution.
+    Error,
+
+    /// Updates about kernel status.
+    Status,
+
+    /// Clear output visible on the frontend.
+    ClearOutput,
+
+    /// For debugging kernels to send events.
+    DebugEvent,
 }
 
 /// Version of wire protocol being used. Only version 5.4 is used and supported.
@@ -218,7 +245,7 @@ pub struct InspectReply {
 
     /// A dictionary containing the data representing the inspected object, can
     /// be empty if nothing is found.
-    pub data: BTreeMap<String, String>,
+    pub data: BTreeMap<String, serde_json::Value>,
 
     /// Metadata associated with the data, can also be empty.
     pub metadata: BTreeMap<String, serde_json::Value>,
@@ -360,6 +387,111 @@ pub struct InterruptReply {
     pub status: String,
 }
 
+/// Streams of output from the kernel, such as stdout and stderr.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct Stream {
+    /// The name of the stream, one of 'stdout' or 'stderr'.
+    pub name: String,
+
+    /// The text to be displayed in the stream.
+    pub text: String,
+}
+
+/// Data to be displayed in frontends, such as images or HTML.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct DisplayData {
+    /// The data to be displayed, typically a MIME type and the data itself.
+    pub data: BTreeMap<String, serde_json::Value>,
+
+    /// Metadata associated with the data, can be empty.
+    pub metadata: BTreeMap<String, serde_json::Value>,
+
+    /// Any information not to be persisted to a notebook.
+    pub transient: Option<DisplayDataTransient>,
+}
+
+/// Transient data associated with display data, such as display IDs.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct DisplayDataTransient {
+    /// Specifies an ID for the display, which can be updated.
+    pub display_id: Option<String>,
+}
+
+/// Re-broadcast of code in an execute request to let all frontends know.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ExecuteInput {
+    /// The code that was executed.
+    pub code: String,
+
+    /// The execution count, which increments with each request that stores
+    /// history.
+    pub execution_count: i32,
+}
+
+/// Content of an error response message.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ErrorReply {
+    /// The status of the error, typically 'error'.
+    pub status: String,
+
+    /// The error name, such as 'NameError'.
+    pub ename: String,
+
+    /// The error message, such as 'NameError: name 'x' is not defined'.
+    pub evalue: String,
+
+    /// The traceback frames of the error as a list of strings.
+    pub traceback: Vec<String>,
+}
+
+/// Results of a code execution, such as the output or return value.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ExecuteResult {
+    /// The execution count, which increments with each request that stores
+    /// history.
+    pub execution_count: i32,
+
+    /// The data to be displayed, typically a MIME type and the data itself. A
+    /// plain text representation should always be provided in the `text/plain`
+    /// mime-type.
+    pub data: BTreeMap<String, serde_json::Value>,
+
+    /// Metadata associated with the data, can be empty.
+    pub metadata: BTreeMap<String, serde_json::Value>,
+}
+
+/// Used by frontends to monitor the status of the kernel.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct Status {
+    /// Current status of the kernel.
+    execution_state: KernelStatus,
+}
+
+/// Possible states of the kernel. When the kernel starts to handle a message,
+/// it will enter the 'busy' state and when it finishes, it will enter the
+/// 'idle' state. The kernel will publish state 'starting' exactly once at
+/// process startup.
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
+pub enum KernelStatus {
+    /// The kernel is starting up.
+    Starting,
+
+    /// The kernel is ready to execute code.
+    Idle,
+
+    /// The kernel is currently executing code.
+    Busy,
+}
+
+/// Request to clear output visible on the frontend.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ClearOutput {
+    /// The wait flag, which if true, indicates that the frontend should wait
+    /// for the clear output request to complete before sending further
+    /// messages.
+    pub wait: bool,
+}
+
 /// Represents a stateful kernel connection that can be used to communicate with
 /// a running Jupyter kernel.
 ///
@@ -375,13 +507,85 @@ pub struct InterruptReply {
 /// - Heartbeat: Periodic ping/pong to ensure the connection is alive.
 ///
 /// The specific details of which messages are sent on which channels are left
-/// to the user of this trait.
-pub trait KernelConnection {
-    // TODO
+/// to the user. Functions will block if disconnected or return an error after
+/// the driver has been closed.
+pub struct KernelConnection {
+    shell_tx: async_channel::Sender<KernelMessage<serde_json::Value>>,
+    control_tx: async_channel::Sender<KernelMessage<serde_json::Value>>,
+    iopub_rx: async_channel::Receiver<KernelMessage<serde_json::Value>>,
+    heartbeat_ping_tx: async_channel::Sender<String>,
+    heartbeat_pong_rx: async_channel::Receiver<String>,
 }
 
-/// Connection to Jupyter via the `v1.kernel.websocket.jupyter.org` protocol.
-pub struct KernelWebSocketConnection {}
+impl KernelConnection {
+    /// Send a message to the kernel over the shell channel.
+    pub async fn send_shell(
+        &self,
+        message: KernelMessage<serde_json::Value>,
+    ) -> Result<(), crate::Error> {
+        self.shell_tx
+            .send(message)
+            .await
+            .map_err(|_| crate::Error::KernelDisconnect)
+    }
 
-/// Connection to Jupyter via ZeroMQ to a local kernel.
-pub struct KernelZmqConnection {}
+    /// Send a message to the kernel over the control channel.
+    pub async fn send_control(
+        &self,
+        message: KernelMessage<serde_json::Value>,
+    ) -> Result<(), crate::Error> {
+        self.control_tx
+            .send(message)
+            .await
+            .map_err(|_| crate::Error::KernelDisconnect)
+    }
+
+    /// Receieve a message from the kernel over the iopub channel.
+    pub async fn recv_iopub(&self) -> Result<KernelMessage<serde_json::Value>, crate::Error> {
+        self.iopub_rx
+            .recv()
+            .await
+            .map_err(|_| crate::Error::KernelDisconnect)
+    }
+
+    /// Send a heartbeat message to the kernel, and wait for a response.
+    ///
+    /// Calling this function more than once concurrently is not supported and
+    /// will result in unexpected behavior.
+    pub async fn heartbeat(&self) -> Result<(), crate::Error> {
+        let ping = Uuid::new_v4().to_string();
+        self.heartbeat_ping_tx
+            .send(ping.clone())
+            .await
+            .map_err(|_| crate::Error::KernelDisconnect)?;
+        loop {
+            let pong = self
+                .heartbeat_pong_rx
+                .recv()
+                .await
+                .map_err(|_| crate::Error::KernelDisconnect)?;
+            if pong == ping {
+                return Ok(());
+            }
+        }
+    }
+
+    /// Close the connection to the kernel, shutting down all channels.
+    pub fn close(self) {
+        let _ = self.shell_tx.close();
+        let _ = self.control_tx.close();
+        let _ = self.iopub_rx.close();
+        let _ = self.heartbeat_ping_tx.close();
+        let _ = self.heartbeat_pong_rx.close();
+    }
+}
+
+/// Connect to Jupyter via the `v1.kernel.websocket.jupyter.org` protocol.
+pub fn create_websocket_connection() -> Result<KernelConnection, crate::Error> {
+    todo!()
+}
+
+/// Connect to Jupyter via ZeroMQ to a local kernel.
+pub fn create_zmq_connection() -> Result<KernelConnection, crate::Error> {
+    todo!()
+}
