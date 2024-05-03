@@ -198,6 +198,34 @@ impl KernelMessage<serde_json::Value> {
     }
 }
 
+/// The content of a reply to a kernel message, with status attached.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum ReplyContent<T> {
+    /// The request was processed successfully.
+    Ok(T),
+
+    /// The request failed due to an error.
+    Error(ErrorReply),
+
+    /// This is the same as `status="error"` but with no information about the
+    /// error. No fields should be present other than status.
+    Abort,
+}
+
+/// Content of an error response message.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ErrorReply {
+    /// The error name, such as 'NameError'.
+    pub ename: String,
+
+    /// The error message, such as 'NameError: name 'x' is not defined'.
+    pub evalue: String,
+
+    /// The traceback frames of the error as a list of strings.
+    pub traceback: Vec<String>,
+}
+
 /// Execute code on behalf of the user.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ExecuteRequest {
@@ -453,19 +481,6 @@ pub struct ExecuteInput {
     /// The execution count, which increments with each request that stores
     /// history.
     pub execution_count: i32,
-}
-
-/// Content of an error response message.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct ErrorReply {
-    /// The error name, such as 'NameError'.
-    pub ename: String,
-
-    /// The error message, such as 'NameError: name 'x' is not defined'.
-    pub evalue: String,
-
-    /// The traceback frames of the error as a list of strings.
-    pub traceback: Vec<String>,
 }
 
 /// Results of a code execution, such as the output or return value.

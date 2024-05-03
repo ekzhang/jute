@@ -54,8 +54,10 @@ async fn main() {
     //
     //     let msg = conn.recv_shell().await.unwrap();
     //     if msg.header.msg_type == KernelMessageType::KernelInfoReply {
-    //         let msg: KernelMessage<KernelInfoReply> = msg.into_typed().unwrap();
-    //         println!("Kernel info: {:?}", msg.content);
+    //         let msg = msg.into_typed::<ReplyContent<KernelInfoReply>>().unwrap();
+    //         if let ReplyContent::Ok(info) = &msg.content {
+    //             println!("Kernel info: {info:?}");
+    //         }
     //     }
     // }
 
@@ -87,12 +89,12 @@ async fn main() {
             let msg = conn.recv_iopub().await.unwrap();
             match msg.header.msg_type {
                 KernelMessageType::Status => {
-                    let msg: KernelMessage<Status> = msg.into_typed().unwrap();
+                    let msg = msg.into_typed::<Status>().unwrap();
                     // println!("Kernel status: {:?}", msg.content.execution_state);
                     status = msg.content.execution_state;
                 }
                 KernelMessageType::Stream => {
-                    let msg: KernelMessage<Stream> = msg.into_typed().unwrap();
+                    let msg = msg.into_typed::<Stream>().unwrap();
                     if msg.content.name == "stdout" {
                         print!("{}", msg.content.text);
                     } else {
@@ -104,11 +106,11 @@ async fn main() {
                 //     println!("Kernel is executing: {}", msg.content.code);
                 // }
                 KernelMessageType::ExecuteResult => {
-                    let msg: KernelMessage<ExecuteResult> = msg.into_typed().unwrap();
+                    let msg = msg.into_typed::<ExecuteResult>().unwrap();
                     println!("-> {}", msg.content.data["text/plain"].as_str().unwrap());
                 }
                 KernelMessageType::Error => {
-                    let msg: KernelMessage<ErrorReply> = msg.into_typed().unwrap();
+                    let msg = msg.into_typed::<ErrorReply>().unwrap();
                     for line in &msg.content.traceback {
                         println!("{line}");
                     }
