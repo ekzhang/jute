@@ -2,6 +2,8 @@
 
 #![allow(dead_code)]
 
+use std::process::Stdio;
+
 use serde_json::json;
 use tokio::fs;
 use tokio::net::TcpListener;
@@ -62,6 +64,8 @@ impl LocalKernel {
         let child = tokio::process::Command::new(&argv[0])
             .args(&argv[1..])
             .kill_on_drop(true)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .spawn()
             .map_err(Error::Subprocess)?;
 
@@ -80,6 +84,16 @@ impl LocalKernel {
             spec: spec.clone(),
             conn,
         })
+    }
+
+    /// Get the kernel connection object.
+    pub fn conn(&self) -> &KernelConnection {
+        &self.conn
+    }
+
+    /// Check if the kernel is still alive.
+    pub fn is_alive(&mut self) -> bool {
+        self.child.try_wait().unwrap().is_none()
     }
 }
 

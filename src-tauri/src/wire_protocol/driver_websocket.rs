@@ -82,7 +82,7 @@ fn from_ws_payload(payload: &[u8]) -> Option<(KernelMessage<serde_json::Value>, 
     let channel = String::from_utf8(payload.get(offsets[0]..offsets[1])?.to_vec()).ok()?;
     let header = serde_json::from_slice(payload.get(offsets[1]..offsets[2])?).ok()?;
     let parent_header = serde_json::from_slice(payload.get(offsets[2]..offsets[3])?).ok()?;
-    serde_json::from_slice(payload.get(offsets[3]..offsets[4])?).ok()?; // metadata
+    // serde_json::from_slice(payload.get(offsets[3]..offsets[4])?).ok()?;
     let content = serde_json::from_slice(payload.get(offsets[4]..offsets[5])?).ok()?;
 
     let mut buffers = Vec::new();

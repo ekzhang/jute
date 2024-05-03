@@ -39,7 +39,7 @@ fn from_zmq_payload(payload: ZmqMessage) -> Option<KernelMessage<serde_json::Val
     let delim_idx = payload.iter().position(|b| *b == b"<IDS|MSG>" as &[u8])?;
     let header = serde_json::from_slice(&payload[delim_idx + 2]).ok()?;
     let parent_header = serde_json::from_slice(&payload[delim_idx + 3]).ok()?;
-    serde_json::from_slice(&payload[delim_idx + 4]).ok()?; // metadata
+    // serde_json::from_slice(&payload[delim_idx + 4]).ok()?;
     let content = serde_json::from_slice(&payload[delim_idx + 5]).ok()?;
     let buffers = payload[delim_idx + 6..].to_vec();
 

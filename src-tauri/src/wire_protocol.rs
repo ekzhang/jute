@@ -19,7 +19,7 @@ mod driver_websocket;
 mod driver_zeromq;
 
 /// Type of a kernel wire protocol message, either request or reply.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum KernelMessageType {
@@ -109,14 +109,10 @@ pub enum KernelMessageType {
 
     /// For debugging kernels to send events.
     DebugEvent,
-}
 
-/// Version of wire protocol being used. Only version 5.4 is used and supported.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
-pub enum KernelProtocolVersion {
-    /// Version 5.4.
-    #[serde(rename = "5.4")]
-    V5_4,
+    /// Another kernel message type that is unrecognized.
+    #[serde(untagged)]
+    Other(String),
 }
 
 /// Header of a message, generally part of the {header, parent_header, metadata,
@@ -140,7 +136,7 @@ pub struct KernelHeader {
     pub msg_type: KernelMessageType,
 
     /// Message protocol version.
-    pub version: KernelProtocolVersion,
+    pub version: String,
 }
 
 /// A message sent to or received from a Jupyter kernel.
@@ -169,7 +165,7 @@ impl<T> KernelMessage<T> {
                 username: "jute-user".to_string(),
                 date: OffsetDateTime::now_utc(),
                 msg_type,
-                version: KernelProtocolVersion::V5_4,
+                version: "5.4".into(),
             },
             parent_header: None,
             content,
@@ -462,9 +458,6 @@ pub struct ExecuteInput {
 /// Content of an error response message.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ErrorReply {
-    /// The status of the error, typically 'error'.
-    pub status: String,
-
     /// The error name, such as 'NameError'.
     pub ename: String,
 
@@ -495,7 +488,7 @@ pub struct ExecuteResult {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Status {
     /// Current status of the kernel.
-    execution_state: KernelStatus,
+    pub execution_state: KernelStatus,
 }
 
 /// Possible states of the kernel. When the kernel starts to handle a message,
@@ -503,6 +496,7 @@ pub struct Status {
 /// 'idle' state. The kernel will publish state 'starting' exactly once at
 /// process startup.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
 pub enum KernelStatus {
     /// The kernel is starting up.
     Starting,
