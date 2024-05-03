@@ -1,4 +1,4 @@
-//! An example that lists all available kernels.
+//! Shell example of running a kernel from Rust code.
 
 use std::io::Write;
 
@@ -42,6 +42,22 @@ async fn main() {
     let mut kernel = LocalKernel::start(&kernel_spec).await.unwrap();
 
     println!("\nStarted kernel.");
+
+    // {
+    //     let conn = kernel.conn();
+    //     conn.send_shell(KernelMessage::new(
+    //         KernelMessageType::KernelInfoRequest,
+    //         KernelInfoRequest {},
+    //     ))
+    //     .await
+    //     .unwrap();
+    //
+    //     let msg = conn.recv_shell().await.unwrap();
+    //     if msg.header.msg_type == KernelMessageType::KernelInfoReply {
+    //         let msg: KernelMessage<KernelInfoReply> = msg.into_typed().unwrap();
+    //         println!("Kernel info: {:?}", msg.content);
+    //     }
+    // }
 
     while kernel.is_alive() {
         print!("> ");
