@@ -41,6 +41,8 @@ async fn run_python(source_code: &str) -> Result<String, Error> {
 }
 
 fn main() {
+    tracing_subscriber::fmt().init();
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet, cpu_usage, run_python])
         .setup(|app| {

@@ -7,9 +7,16 @@
 use std::collections::BTreeMap;
 
 use bytes::Bytes;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
+
+pub use self::driver_websocket::create_websocket_connection;
+pub use self::driver_zeromq::create_zeromq_connection;
+use crate::Error;
+
+mod driver_websocket;
+mod driver_zeromq;
 
 /// Type of a kernel wire protocol message, either request or reply.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
@@ -154,12 +161,12 @@ pub struct KernelMessage<T> {
 
 impl<T> KernelMessage<T> {
     /// Create a basic kernel message with the given header and content.
-    pub fn new(msg_type: KernelMessageType, session: String, content: T) -> Self {
+    pub fn new(msg_type: KernelMessageType, content: T) -> Self {
         Self {
             header: KernelHeader {
                 msg_id: Uuid::new_v4().to_string(),
-                session,
-                username: "jute".to_string(),
+                session: "jute-session".to_string(),
+                username: "jute-user".to_string(),
                 date: OffsetDateTime::now_utc(),
                 msg_type,
                 version: KernelProtocolVersion::V5_4,
@@ -168,6 +175,30 @@ impl<T> KernelMessage<T> {
             content,
             buffers: Vec::new(),
         }
+    }
+}
+
+impl<T: Serialize> KernelMessage<T> {
+    /// Produce a variant of the message as a serialized JSON type.
+    pub fn into_json(self) -> KernelMessage<serde_json::Value> {
+        KernelMessage {
+            header: self.header,
+            parent_header: self.parent_header,
+            content: serde_json::to_value(&self.content).expect("KernelMessage JSON serialization"),
+            buffers: self.buffers,
+        }
+    }
+}
+
+impl KernelMessage<serde_json::Value> {
+    /// Deserialize the content of the message into a specific type.
+    pub fn into_typed<T: DeserializeOwned>(self) -> Result<KernelMessage<T>, serde_json::Error> {
+        Ok(KernelMessage {
+            header: self.header,
+            parent_header: self.parent_header,
+            content: serde_json::from_value(self.content)?,
+            buffers: self.buffers,
+        })
     }
 }
 
@@ -504,70 +535,42 @@ pub struct ClearOutput {
 ///   from any client over the shell channel.
 /// - Stdin: Requests from the kernel to the client for standard input.
 /// - Control: Just like Shell, but separated to avoid queueing.
-/// - Heartbeat: Periodic ping/pong to ensure the connection is alive.
+/// - Heartbeat: Periodic ping/pong to ensure the connection is alive. This
+///   appears to only be supported by ZeroMQ, so we don't implement it here.
 ///
 /// The specific details of which messages are sent on which channels are left
 /// to the user. Functions will block if disconnected or return an error after
 /// the driver has been closed.
+#[derive(Clone)]
 pub struct KernelConnection {
     shell_tx: async_channel::Sender<KernelMessage<serde_json::Value>>,
     control_tx: async_channel::Sender<KernelMessage<serde_json::Value>>,
     iopub_rx: async_channel::Receiver<KernelMessage<serde_json::Value>>,
-    heartbeat_ping_tx: async_channel::Sender<String>,
-    heartbeat_pong_rx: async_channel::Receiver<String>,
 }
 
 impl KernelConnection {
     /// Send a message to the kernel over the shell channel.
-    pub async fn send_shell(
-        &self,
-        message: KernelMessage<serde_json::Value>,
-    ) -> Result<(), crate::Error> {
+    pub async fn send_shell<T: Serialize>(&self, message: KernelMessage<T>) -> Result<(), Error> {
         self.shell_tx
-            .send(message)
+            .send(message.into_json())
             .await
-            .map_err(|_| crate::Error::KernelDisconnect)
+            .map_err(|_| Error::KernelDisconnect)
     }
 
     /// Send a message to the kernel over the control channel.
-    pub async fn send_control(
-        &self,
-        message: KernelMessage<serde_json::Value>,
-    ) -> Result<(), crate::Error> {
+    pub async fn send_control<T: Serialize>(&self, message: KernelMessage<T>) -> Result<(), Error> {
         self.control_tx
-            .send(message)
+            .send(message.into_json())
             .await
-            .map_err(|_| crate::Error::KernelDisconnect)
+            .map_err(|_| Error::KernelDisconnect)
     }
 
     /// Receieve a message from the kernel over the iopub channel.
-    pub async fn recv_iopub(&self) -> Result<KernelMessage<serde_json::Value>, crate::Error> {
+    pub async fn recv_iopub(&self) -> Result<KernelMessage<serde_json::Value>, Error> {
         self.iopub_rx
             .recv()
             .await
-            .map_err(|_| crate::Error::KernelDisconnect)
-    }
-
-    /// Send a heartbeat message to the kernel, and wait for a response.
-    ///
-    /// Calling this function more than once concurrently is not supported and
-    /// will result in unexpected behavior.
-    pub async fn heartbeat(&self) -> Result<(), crate::Error> {
-        let ping = Uuid::new_v4().to_string();
-        self.heartbeat_ping_tx
-            .send(ping.clone())
-            .await
-            .map_err(|_| crate::Error::KernelDisconnect)?;
-        loop {
-            let pong = self
-                .heartbeat_pong_rx
-                .recv()
-                .await
-                .map_err(|_| crate::Error::KernelDisconnect)?;
-            if pong == ping {
-                return Ok(());
-            }
-        }
+            .map_err(|_| Error::KernelDisconnect)
     }
 
     /// Close the connection to the kernel, shutting down all channels.
@@ -575,17 +578,5 @@ impl KernelConnection {
         let _ = self.shell_tx.close();
         let _ = self.control_tx.close();
         let _ = self.iopub_rx.close();
-        let _ = self.heartbeat_ping_tx.close();
-        let _ = self.heartbeat_pong_rx.close();
     }
-}
-
-/// Connect to Jupyter via the `v1.kernel.websocket.jupyter.org` protocol.
-pub fn create_websocket_connection() -> Result<KernelConnection, crate::Error> {
-    todo!()
-}
-
-/// Connect to Jupyter via ZeroMQ to a local kernel.
-pub fn create_zmq_connection() -> Result<KernelConnection, crate::Error> {
-    todo!()
 }
