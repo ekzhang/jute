@@ -574,9 +574,9 @@ impl KernelConnection {
     }
 
     /// Close the connection to the kernel, shutting down all channels.
-    pub fn close(self) {
-        let _ = self.shell_tx.close();
-        let _ = self.control_tx.close();
-        let _ = self.iopub_rx.close();
+    pub fn close(&self) {
+        self.shell_tx.close();
+        self.control_tx.close();
+        self.iopub_rx.close();
     }
 }
