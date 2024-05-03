@@ -8,7 +8,6 @@ repository = "https://github.com/ekzhang/jute.git"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.79"
 async-channel = "2.2.1"
 bytes = "1.5.0"
 cfg-if = "1.0.0"

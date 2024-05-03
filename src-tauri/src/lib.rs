@@ -5,7 +5,7 @@
 
 use std::io;
 
-pub mod kernel_client;
+pub mod jupyter_client;
 pub mod server;
 pub mod wire_protocol;
 
@@ -31,6 +31,10 @@ pub enum Error {
     /// HTTP error from reqwest while making a request.
     #[error("HTTP failure: {0}")]
     ReqwestError(#[from] reqwest::Error),
+
+    /// Error originating from ZeroMQ.
+    #[error("zeromq: {0}")]
+    Zmq(#[from] zeromq::ZmqError),
 }
 
 impl serde::Serialize for Error {

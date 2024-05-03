@@ -22,7 +22,7 @@ use crate::Error;
 // offset_5: buffer_0
 // (offset_6: buffer_1 ... and so on)
 
-fn to_ws_payload(msg: KernelMessage<serde_json::Value>, channel: &str) -> Option<Vec<u8>> {
+fn to_ws_payload(msg: &KernelMessage<serde_json::Value>, channel: &str) -> Option<Vec<u8>> {
     let offset_number = 5 + msg.buffers.len() as u64;
     let offset_0 = 8 * (offset_number + 1);
     let mut offsets = vec![offset_number];
@@ -49,9 +49,9 @@ fn to_ws_payload(msg: KernelMessage<serde_json::Value>, channel: &str) -> Option
     offsets.push(offset_0 + payload.len() as u64);
     payload.append(&mut serde_json::to_vec(&msg.content).ok()?);
 
-    for buffer in msg.buffers {
+    for buffer in &msg.buffers {
         offsets.push(offset_0 + payload.len() as u64);
-        payload.extend_from_slice(&buffer);
+        payload.extend_from_slice(buffer);
     }
 
     Some(
@@ -107,6 +107,12 @@ pub async fn create_websocket_connection(websocket_url: &str) -> Result<KernelCo
     let (control_tx, control_rx) = async_channel::bounded(1);
     let (iopub_tx, iopub_rx) = async_channel::bounded(1);
 
+    let conn = KernelConnection {
+        shell_tx,
+        control_tx,
+        iopub_rx,
+    };
+
     let mut req = websocket_url
         .into_client_request()
         .map_err(|err| Error::KernelConnect(err.to_string()))?;
@@ -119,12 +125,6 @@ pub async fn create_websocket_connection(websocket_url: &str) -> Result<KernelCo
         .await
         .map_err(|err| Error::KernelConnect(err.to_string()))?;
 
-    let conn = KernelConnection {
-        shell_tx,
-        control_tx,
-        iopub_rx,
-    };
-
     let (mut ws_tx, mut ws_rx) = ws.split();
     tokio::spawn(async move {
         // Send shell and control messages over the WebSocket.
@@ -135,7 +135,7 @@ pub async fn create_websocket_connection(websocket_url: &str) -> Result<KernelCo
                 else => break,
             };
 
-            let Some(payload) = to_ws_payload(msg, channel) else {
+            let Some(payload) = to_ws_payload(&msg, channel) else {
                 break;
             };
 
