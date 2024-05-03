@@ -201,7 +201,7 @@ impl KernelMessage<serde_json::Value> {
 /// The content of a reply to a kernel message, with status attached.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(tag = "status", rename_all = "snake_case")]
-pub enum ReplyContent<T> {
+pub enum Reply<T> {
     /// The request was processed successfully.
     Ok(T),
 

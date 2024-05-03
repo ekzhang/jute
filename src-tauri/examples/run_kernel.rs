@@ -54,8 +54,8 @@ async fn main() {
     //
     //     let msg = conn.recv_shell().await.unwrap();
     //     if msg.header.msg_type == KernelMessageType::KernelInfoReply {
-    //         let msg = msg.into_typed::<ReplyContent<KernelInfoReply>>().unwrap();
-    //         if let ReplyContent::Ok(info) = &msg.content {
+    //         let msg = msg.into_typed::<Reply<KernelInfoReply>>().unwrap();
+    //         if let Reply::Ok(info) = &msg.content {
     //             println!("Kernel info: {info:?}");
     //         }
     //     }
