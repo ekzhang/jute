@@ -210,6 +210,10 @@ pub enum Reply<T> {
 
     /// This is the same as `status="error"` but with no information about the
     /// error. No fields should be present other than status.
+    ///
+    /// Some messages like execute_reply return "aborted" instead, see
+    /// <https://github.com/ipython/ipykernel/issues/367> for details.
+    #[serde(alias = "aborted")]
     Abort,
 }
 
