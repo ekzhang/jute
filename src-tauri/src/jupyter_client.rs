@@ -38,7 +38,7 @@ impl ActiveKernel {
             ws_url = ws_url.replacen("http://", "ws://", 1);
         }
 
-        let connection = create_websocket_connection(&ws_url).await?;
+        let connection = create_websocket_connection(&ws_url, &client.token).await?;
 
         Ok(Self {
             client: client.clone(),
@@ -76,16 +76,17 @@ impl ActiveKernel {
 /// A stateless HTTP client for a running Jupyter server.
 #[derive(Clone)]
 pub struct JupyterClient {
-    http_client: reqwest::Client,
     server_url: Url,
+    token: String,
+    http_client: reqwest::Client,
 }
 
 impl JupyterClient {
     /// Return a new client to a Jupyter server without connecting.
-    pub fn new(server_url: &str, server_token: &str) -> Result<Self, Error> {
+    pub fn new(server_url: &str, token: &str) -> Result<Self, Error> {
         let headers = HeaderMap::from_iter([(
             header::AUTHORIZATION,
-            format!("token {server_token}")
+            format!("token {token}")
                 .parse()
                 .expect("server token parse"),
         )]);
@@ -96,8 +97,9 @@ impl JupyterClient {
             .build()?;
 
         Ok(Self {
-            http_client,
             server_url,
+            token: token.into(),
+            http_client,
         })
     }
 

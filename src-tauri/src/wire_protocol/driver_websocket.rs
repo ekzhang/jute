@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use futures_util::{SinkExt, StreamExt};
-use reqwest::header::SEC_WEBSOCKET_PROTOCOL;
+use reqwest::header::{HeaderValue, AUTHORIZATION, SEC_WEBSOCKET_PROTOCOL};
 use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message};
 use tracing::warn;
 
@@ -102,7 +102,10 @@ fn from_ws_payload(payload: &[u8]) -> Option<(KernelMessage<serde_json::Value>, 
 }
 
 /// Connect to Jupyter via the `v1.kernel.websocket.jupyter.org` protocol.
-pub async fn create_websocket_connection(websocket_url: &str) -> Result<KernelConnection, Error> {
+pub async fn create_websocket_connection(
+    websocket_url: &str,
+    token: &str,
+) -> Result<KernelConnection, Error> {
     let (shell_tx, shell_rx) = async_channel::bounded(1);
     let (control_tx, control_rx) = async_channel::bounded(1);
     let (iopub_tx, iopub_rx) = async_channel::bounded(1);
@@ -116,9 +119,16 @@ pub async fn create_websocket_connection(websocket_url: &str) -> Result<KernelCo
     let mut req = websocket_url
         .into_client_request()
         .map_err(|err| Error::KernelConnect(err.to_string()))?;
+
     req.headers_mut().insert(
         SEC_WEBSOCKET_PROTOCOL,
-        "v1.kernel.websocket.jupyter.org".parse().unwrap(),
+        HeaderValue::from_static("v1.kernel.websocket.jupyter.org"),
+    );
+    req.headers_mut().insert(
+        AUTHORIZATION,
+        format!("token {token}")
+            .parse::<HeaderValue>()
+            .map_err(|err| Error::KernelConnect(err.to_string()))?,
     );
 
     let (ws, _resp) = tokio_tungstenite::connect_async(req)
