@@ -5,10 +5,13 @@
 //! communicate with Jupyter kernels over ZeroMQ or WebSocket.
 
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use bytes::Bytes;
+use dashmap::DashMap;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use time::OffsetDateTime;
+use tokio::sync::oneshot;
 use uuid::Uuid;
 
 pub use self::driver_websocket::create_websocket_connection;
@@ -141,7 +144,7 @@ pub struct KernelHeader {
 
 /// A message sent to or received from a Jupyter kernel.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct KernelMessage<T> {
+pub struct KernelMessage<T = serde_json::Value> {
     /// The message header.
     pub header: KernelHeader,
 
@@ -176,7 +179,7 @@ impl<T> KernelMessage<T> {
 
 impl<T: Serialize> KernelMessage<T> {
     /// Produce a variant of the message as a serialized JSON type.
-    pub fn into_json(self) -> KernelMessage<serde_json::Value> {
+    pub fn into_json(self) -> KernelMessage {
         KernelMessage {
             header: self.header,
             parent_header: self.parent_header,
@@ -186,13 +189,14 @@ impl<T: Serialize> KernelMessage<T> {
     }
 }
 
-impl KernelMessage<serde_json::Value> {
+impl KernelMessage {
     /// Deserialize the content of the message into a specific type.
-    pub fn into_typed<T: DeserializeOwned>(self) -> Result<KernelMessage<T>, serde_json::Error> {
+    pub fn into_typed<T: DeserializeOwned>(self) -> Result<KernelMessage<T>, Error> {
         Ok(KernelMessage {
             header: self.header,
             parent_header: self.parent_header,
-            content: serde_json::from_value(self.content)?,
+            content: serde_json::from_value(self.content)
+                .map_err(|err| Error::DeserializeMessage(err.to_string()))?,
             buffers: self.buffers,
         })
     }
@@ -263,9 +267,6 @@ pub struct ExecuteRequest {
 /// Represents a reply to an execute request.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ExecuteReply {
-    /// The status of the execution, can be 'ok', 'error', or 'aborted'.
-    pub status: String,
-
     /// The execution count, which increments with each request that stores
     /// history.
     pub execution_count: i32,
@@ -296,9 +297,6 @@ pub struct InspectRequest {
 /// information about the code context.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct InspectReply {
-    /// The status of the inspection, 'ok' if successful, 'error' otherwise.
-    pub status: String,
-
     /// Indicates whether an object was found during the inspection.
     pub found: bool,
 
@@ -326,9 +324,6 @@ pub struct CompleteRequest {
 /// Represents a reply to a completion request.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CompleteReply {
-    /// The status of the completion, 'ok' if successful, 'error' otherwise.
-    pub status: String,
-
     /// A list of all matches to the completion request.
     pub matches: Vec<String>,
 
@@ -344,27 +339,6 @@ pub struct CompleteReply {
     pub metadata: BTreeMap<String, serde_json::Value>,
 }
 
-/// Request to determine if the provided code is complete and ready for
-/// execution.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct IsCompleteRequest {
-    /// The code entered so far, possibly spanning multiple lines.
-    pub code: String,
-}
-
-/// Represents a reply to an is_complete request, indicating the completeness
-/// status of the code.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct IsCompleteReply {
-    /// The status of the code's completeness: 'complete', 'incomplete',
-    /// 'invalid', or 'unknown'.
-    pub status: String,
-
-    /// Suggested characters to indent the next line if the code is incomplete.
-    /// This field is optional and used only if the status is 'incomplete'.
-    pub indent: Option<String>,
-}
-
 /// Request for information about the kernel.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct KernelInfoRequest {}
@@ -373,9 +347,6 @@ pub struct KernelInfoRequest {}
 /// kernel.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct KernelInfoReply {
-    /// The status of the request, 'ok' if successful, 'error' otherwise.
-    pub status: String,
-
     /// Version of the messaging protocol used by the kernel.
     pub protocol_version: String,
 
@@ -392,6 +363,7 @@ pub struct KernelInfoReply {
     pub banner: String,
 
     /// Indicates if the kernel supports debugging.
+    #[serde(default)]
     pub debugger: bool,
 }
 
@@ -425,10 +397,6 @@ pub struct ShutdownRequest {
 /// Represents a reply to a shutdown request.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ShutdownReply {
-    /// The status of the shutdown request, 'ok' if successful, 'error'
-    /// otherwise.
-    pub status: String,
-
     /// Matches the restart flag from the request to indicate the intended
     /// shutdown behavior.
     pub restart: bool,
@@ -440,11 +408,7 @@ pub struct InterruptRequest {}
 
 /// Represents a reply to an interrupt request.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct InterruptReply {
-    /// The status of the interrupt request, 'ok' if successful, 'error'
-    /// otherwise.
-    pub status: String,
-}
+pub struct InterruptReply {}
 
 /// Streams of output from the kernel, such as stdout and stderr.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -556,34 +520,70 @@ pub struct ClearOutput {
 /// the driver has been closed.
 #[derive(Clone)]
 pub struct KernelConnection {
-    shell_tx: async_channel::Sender<KernelMessage<serde_json::Value>>,
-    control_tx: async_channel::Sender<KernelMessage<serde_json::Value>>,
-    iopub_rx: async_channel::Receiver<KernelMessage<serde_json::Value>>,
+    shell_tx: async_channel::Sender<KernelMessage>,
+    control_tx: async_channel::Sender<KernelMessage>,
+    iopub_rx: async_channel::Receiver<KernelMessage>,
+    reply_tx_map: Arc<DashMap<String, oneshot::Sender<KernelMessage>>>,
+    // TODO: Include CancellationToken and reconnection
 }
 
 impl KernelConnection {
     /// Send a message to the kernel over the shell channel.
-    pub async fn send_shell<T: Serialize>(&self, message: KernelMessage<T>) -> Result<(), Error> {
+    ///
+    /// On success, return a receiver for the reply from the kernel on the same
+    /// channel, when it is finished.
+    pub async fn call_shell<T: Serialize>(
+        &self,
+        message: KernelMessage<T>,
+    ) -> Result<PendingRequest, Error> {
+        let (reply_tx, reply_rx) = oneshot::channel();
+        let msg_id = message.header.msg_id.clone();
+        self.reply_tx_map.insert(msg_id.clone(), reply_tx);
+
         self.shell_tx
             .send(message.into_json())
             .await
-            .map_err(|_| Error::KernelDisconnect)
+            .map_err(|_| Error::KernelDisconnect)?;
+
+        Ok(PendingRequest {
+            reply_tx_map: self.reply_tx_map.clone(),
+            reply_rx,
+            msg_id,
+        })
     }
 
     /// Send a message to the kernel over the control channel.
-    pub async fn send_control<T: Serialize>(&self, message: KernelMessage<T>) -> Result<(), Error> {
+    pub async fn call_control<T: Serialize>(
+        &self,
+        message: KernelMessage<T>,
+    ) -> Result<PendingRequest, Error> {
+        let (reply_tx, reply_rx) = oneshot::channel();
+        let msg_id = message.header.msg_id.clone();
+        self.reply_tx_map.insert(msg_id.clone(), reply_tx);
+
         self.control_tx
             .send(message.into_json())
             .await
-            .map_err(|_| Error::KernelDisconnect)
+            .map_err(|_| Error::KernelDisconnect)?;
+
+        Ok(PendingRequest {
+            reply_tx_map: self.reply_tx_map.clone(),
+            reply_rx,
+            msg_id,
+        })
     }
 
     /// Receieve a message from the kernel over the iopub channel.
-    pub async fn recv_iopub(&self) -> Result<KernelMessage<serde_json::Value>, Error> {
+    pub async fn recv_iopub(&self) -> Result<KernelMessage, Error> {
         self.iopub_rx
             .recv()
             .await
             .map_err(|_| Error::KernelDisconnect)
+    }
+
+    /// Receive an immediate message over the iopub channel without waiting.
+    pub fn try_recv_iopub(&self) -> Option<KernelMessage> {
+        self.iopub_rx.try_recv().ok()
     }
 
     /// Close the connection to the kernel, shutting down all channels.
@@ -591,5 +591,31 @@ impl KernelConnection {
         self.shell_tx.close();
         self.control_tx.close();
         self.iopub_rx.close();
+    }
+}
+
+/// Receives a reply from a previous kernel router-dealer request.
+pub struct PendingRequest {
+    reply_tx_map: Arc<DashMap<String, oneshot::Sender<KernelMessage>>>,
+    reply_rx: oneshot::Receiver<KernelMessage>,
+    msg_id: String,
+}
+
+impl PendingRequest {
+    /// Wait for the reply to the previous request from the kernel.
+    pub async fn get_reply<U: DeserializeOwned>(
+        &mut self,
+    ) -> Result<KernelMessage<Reply<U>>, Error> {
+        (&mut self.reply_rx)
+            .await
+            .map_err(|_| Error::KernelDisconnect)?
+            .into_typed()
+    }
+}
+
+impl Drop for PendingRequest {
+    fn drop(&mut self) {
+        // This ensures that we don't leak memory by leaving the channel in the map.
+        self.reply_tx_map.remove(&self.msg_id);
     }
 }

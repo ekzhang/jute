@@ -1,10 +1,13 @@
+use std::sync::Arc;
+
 use bytes::Bytes;
+use dashmap::DashMap;
 use futures_util::{SinkExt, StreamExt};
 use reqwest::header::{HeaderValue, AUTHORIZATION, SEC_WEBSOCKET_PROTOCOL};
 use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message};
-use tracing::warn;
+use tracing::{error, warn};
 
-use super::{KernelConnection, KernelMessage};
+use super::{KernelConnection, KernelHeader, KernelMessage};
 use crate::Error;
 
 // In this protocol, a kernel message is serialized over WebSocket as follows,
@@ -22,7 +25,7 @@ use crate::Error;
 // offset_5: buffer_0
 // (offset_6: buffer_1 ... and so on)
 
-fn to_ws_payload(msg: &KernelMessage<serde_json::Value>, channel: &str) -> Option<Vec<u8>> {
+fn to_ws_payload(msg: &KernelMessage, channel: &str) -> Option<Vec<u8>> {
     let offset_number = 5 + msg.buffers.len() as u64;
     let offset_0 = 8 * (offset_number + 1);
     let mut offsets = vec![offset_number];
@@ -63,7 +66,7 @@ fn to_ws_payload(msg: &KernelMessage<serde_json::Value>, channel: &str) -> Optio
     )
 }
 
-fn from_ws_payload(payload: &[u8]) -> Option<(KernelMessage<serde_json::Value>, String)> {
+fn from_ws_payload(payload: &[u8]) -> Option<(KernelMessage, String)> {
     let offset_number: usize = u64::from_le_bytes(payload.get(0..8)?.try_into().ok()?)
         .try_into()
         .ok()?;
@@ -106,14 +109,16 @@ pub async fn create_websocket_connection(
     websocket_url: &str,
     token: &str,
 ) -> Result<KernelConnection, Error> {
-    let (shell_tx, shell_rx) = async_channel::bounded(1);
-    let (control_tx, control_rx) = async_channel::bounded(1);
-    let (iopub_tx, iopub_rx) = async_channel::bounded(1);
+    let (shell_tx, shell_rx) = async_channel::bounded(8);
+    let (control_tx, control_rx) = async_channel::bounded(8);
+    let (iopub_tx, iopub_rx) = async_channel::bounded(64);
+    let reply_tx_map = Arc::new(DashMap::new());
 
     let conn = KernelConnection {
         shell_tx,
         control_tx,
         iopub_rx,
+        reply_tx_map: reply_tx_map.clone(),
     };
 
     let mut req = websocket_url
@@ -146,7 +151,8 @@ pub async fn create_websocket_connection(
             };
 
             let Some(payload) = to_ws_payload(&msg, channel) else {
-                break;
+                error!("error converting message to ws payload");
+                continue;
             };
 
             if ws_tx.send(Message::Binary(payload)).await.is_err() {
@@ -158,7 +164,7 @@ pub async fn create_websocket_connection(
     });
 
     tokio::spawn(async move {
-        // Receieve iopub messages from the WebSocket.
+        // Receieve shell, control, and iopub messages from the WebSocket.
         while let Some(Ok(ws_payload)) = ws_rx.next().await {
             let payload = match ws_payload {
                 Message::Binary(payload) => payload,
@@ -169,13 +175,25 @@ pub async fn create_websocket_connection(
                 Some(msg) => msg,
                 None => continue,
             };
-            if channel != "iopub" {
-                warn!("received WebSocket message on unexpected channel: {channel}");
-            }
 
-            if iopub_tx.send(msg).await.is_err() {
-                // The receiver has been dropped.
-                break;
+            match &*channel {
+                "shell" | "control" => {
+                    if let Some(KernelHeader { msg_id, .. }) = &msg.parent_header {
+                        if let Some((_, tx)) = reply_tx_map.remove(msg_id) {
+                            // Optional, it's not an error if this receiver has been dropped.
+                            _ = tx.send(msg);
+                        }
+                    }
+                }
+                "iopub" => {
+                    if iopub_tx.send(msg).await.is_err() {
+                        // The kernel connection has been closed.
+                        break;
+                    }
+                }
+                _ => {
+                    warn!("received WebSocket message on unexpected channel: {channel}");
+                }
             }
         }
     });

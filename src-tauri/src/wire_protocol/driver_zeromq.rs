@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use bytes::Bytes;
+use dashmap::DashMap;
 use tracing::{error, warn};
 use zeromq::{Socket, SocketRecv, SocketSend, ZmqMessage};
 
-use super::{KernelConnection, KernelMessage};
+use super::{KernelConnection, KernelHeader, KernelMessage};
 use crate::Error;
 
 /// Sign a message using HMAC-SHA256 with the kernel's signing key.
@@ -17,7 +20,7 @@ fn sign_message(signing_key: &str, bytes: &[Bytes]) -> String {
     format!("{:x}", mac.finalize().into_bytes())
 }
 
-fn to_zmq_payload(msg: &KernelMessage<serde_json::Value>, signing_key: &str) -> Option<ZmqMessage> {
+fn to_zmq_payload(msg: &KernelMessage, signing_key: &str) -> Option<ZmqMessage> {
     let header = Bytes::from(serde_json::to_vec(&msg.header).ok()?);
     let parent_header = Bytes::from(serde_json::to_vec(&msg.parent_header).ok()?);
     let metadata = Bytes::from_static(b"{}");
@@ -33,7 +36,7 @@ fn to_zmq_payload(msg: &KernelMessage<serde_json::Value>, signing_key: &str) -> 
     ZmqMessage::try_from(payload).ok()
 }
 
-fn from_zmq_payload(payload: ZmqMessage) -> Option<KernelMessage<serde_json::Value>> {
+fn from_zmq_payload(payload: ZmqMessage) -> Option<KernelMessage> {
     let payload = payload.into_vec();
 
     let delim_idx = payload.iter().position(|b| *b == b"<IDS|MSG>" as &[u8])?;
@@ -60,14 +63,16 @@ pub async fn create_zeromq_connection(
     heartbeat_port: u16,
     signing_key: &str,
 ) -> Result<KernelConnection, Error> {
-    let (shell_tx, shell_rx) = async_channel::bounded(1);
-    let (control_tx, control_rx) = async_channel::bounded(1);
-    let (iopub_tx, iopub_rx) = async_channel::bounded(1);
+    let (shell_tx, shell_rx) = async_channel::bounded(8);
+    let (control_tx, control_rx) = async_channel::bounded(8);
+    let (iopub_tx, iopub_rx) = async_channel::bounded(64);
+    let reply_tx_map = Arc::new(DashMap::new());
 
     let conn = KernelConnection {
         shell_tx,
         control_tx,
         iopub_rx,
+        reply_tx_map: reply_tx_map.clone(),
     };
 
     let mut shell = zeromq::DealerSocket::new();
@@ -95,29 +100,63 @@ pub async fn create_zeromq_connection(
     let _ = (stdin, heartbeat); // Not supported yet.
 
     let key = signing_key.to_string();
+    let tx_map = reply_tx_map.clone();
     tokio::spawn(async move {
-        // Send shell messages.
-        while let Ok(msg) = shell_rx.recv().await {
-            let Some(payload) = to_zmq_payload(&msg, &key) else {
-                error!("error converting shell message to zmq payload");
-                break;
-            };
-            if let Err(err) = shell.send(payload).await {
-                warn!("error sending zmq shell message: {err:?}");
+        // Send and receive shell messages.
+        loop {
+            tokio::select! {
+                Ok(msg) = shell_rx.recv() => {
+                    let Some(payload) = to_zmq_payload(&msg, &key) else {
+                        error!("error converting shell message to zmq payload");
+                        continue;
+                    };
+                    if let Err(err) = shell.send(payload).await {
+                        warn!("error sending zmq shell message: {err:?}");
+                    }
+                }
+                Ok(payload) = shell.recv() => {
+                    if let Some(msg) = from_zmq_payload(payload) {
+                        if let Some(KernelHeader { msg_id, .. }) = &msg.parent_header {
+                            if let Some((_, reply_tx)) = tx_map.remove(msg_id) {
+                                _ = reply_tx.send(msg);
+                            }
+                        }
+                    } else {
+                        warn!("error converting zmq payload to shell reply");
+                    }
+                }
+                else => break,
             }
         }
     });
 
     let key = signing_key.to_string();
+    let tx_map = reply_tx_map.clone();
     tokio::spawn(async move {
-        // Send control messages.
-        while let Ok(msg) = control_rx.recv().await {
-            let Some(payload) = to_zmq_payload(&msg, &key) else {
-                error!("error converting control message to zmq payload");
-                break;
-            };
-            if let Err(err) = control.send(payload).await {
-                warn!("error sending zmq control message: {err:?}");
+        // Send and receive control messages.
+        loop {
+            tokio::select! {
+                Ok(msg) = control_rx.recv() => {
+                    let Some(payload) = to_zmq_payload(&msg, &key) else {
+                        error!("error converting control message to zmq payload");
+                        continue;
+                    };
+                    if let Err(err) = control.send(payload).await {
+                        warn!("error sending zmq control message: {err:?}");
+                    }
+                }
+                Ok(payload) = control.recv() => {
+                    if let Some(msg) = from_zmq_payload(payload) {
+                        if let Some(KernelHeader { msg_id, .. }) = &msg.parent_header {
+                            if let Some((_, reply_tx)) = tx_map.remove(msg_id) {
+                                _ = reply_tx.send(msg);
+                            }
+                        }
+                    } else {
+                        warn!("error converting zmq payload to control reply");
+                    }
+                }
+                else => break,
             }
         }
     });
@@ -127,6 +166,7 @@ pub async fn create_zeromq_connection(
         while let Ok(payload) = iopub.recv().await {
             if let Some(msg) = from_zmq_payload(payload) {
                 if iopub_tx.send(msg).await.is_err() {
+                    // The kernel connection has been closed.
                     break;
                 }
             } else {

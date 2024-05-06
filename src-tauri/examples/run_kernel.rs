@@ -5,8 +5,8 @@ use std::io::Write;
 use jute::{
     server::{environment, kernel::LocalKernel},
     wire_protocol::{
-        ErrorReply, ExecuteRequest, ExecuteResult, KernelMessage, KernelMessageType, KernelStatus,
-        Status, Stream,
+        ErrorReply, ExecuteRequest, ExecuteResult, KernelInfoReply, KernelInfoRequest,
+        KernelMessage, KernelMessageType, KernelStatus, Reply, Status, Stream,
     },
 };
 
@@ -43,23 +43,20 @@ async fn main() {
 
     println!("\nStarted kernel.");
 
-    // {
-    //     let conn = kernel.conn();
-    //     conn.send_shell(KernelMessage::new(
-    //         KernelMessageType::KernelInfoRequest,
-    //         KernelInfoRequest {},
-    //     ))
-    //     .await
-    //     .unwrap();
-    //
-    //     let msg = conn.recv_shell().await.unwrap();
-    //     if msg.header.msg_type == KernelMessageType::KernelInfoReply {
-    //         let msg = msg.into_typed::<Reply<KernelInfoReply>>().unwrap();
-    //         if let Reply::Ok(info) = &msg.content {
-    //             println!("Kernel info: {info:?}");
-    //         }
-    //     }
-    // }
+    {
+        let conn = kernel.conn();
+        let mut req = conn
+            .call_shell(KernelMessage::new(
+                KernelMessageType::KernelInfoRequest,
+                KernelInfoRequest {},
+            ))
+            .await
+            .unwrap();
+        let msg = req.get_reply::<KernelInfoReply>().await.unwrap();
+        if let Reply::Ok(info) = &msg.content {
+            println!("{}", info.banner);
+        }
+    }
 
     while kernel.is_alive() {
         print!("> ");
@@ -69,8 +66,9 @@ async fn main() {
         std::io::stdin().read_line(&mut input).unwrap();
 
         let conn = kernel.conn();
+        while conn.try_recv_iopub().is_some() {}
 
-        conn.send_shell(KernelMessage::new(
+        conn.call_shell(KernelMessage::new(
             KernelMessageType::ExecuteRequest,
             ExecuteRequest {
                 code: input,

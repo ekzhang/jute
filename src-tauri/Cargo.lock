@@ -1632,6 +1632,7 @@ dependencies = [
  "async-channel",
  "bytes",
  "cfg-if",
+ "dashmap",
  "futures-util",
  "hmac",
  "reqwest",

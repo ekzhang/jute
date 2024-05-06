@@ -32,6 +32,10 @@ pub enum Error {
     #[error("HTTP failure: {0}")]
     ReqwestError(#[from] reqwest::Error),
 
+    /// Error while deserializing a message.
+    #[error("could not deserialize message: {0}")]
+    DeserializeMessage(String),
+
     /// Error originating from ZeroMQ.
     #[error("zeromq: {0}")]
     Zmq(#[from] zeromq::ZmqError),

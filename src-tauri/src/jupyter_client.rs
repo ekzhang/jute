@@ -60,7 +60,7 @@ impl ActiveKernel {
     /// Run a block of code input on the kernel.
     pub async fn run_input(&self, code: &str) -> Result<(), Error> {
         self.connection
-            .send_shell(KernelMessage::new(
+            .call_shell(KernelMessage::new(
                 KernelMessageType::ExecuteInput,
                 ExecuteInput {
                     code: code.to_string(),
