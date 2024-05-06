@@ -5,6 +5,7 @@ use dashmap::DashMap;
 use futures_util::{SinkExt, StreamExt};
 use reqwest::header::{HeaderValue, AUTHORIZATION, SEC_WEBSOCKET_PROTOCOL};
 use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message};
+use tokio_util::sync::CancellationToken;
 use tracing::{error, warn};
 
 use super::{KernelConnection, KernelHeader, KernelMessage};
@@ -113,12 +114,15 @@ pub async fn create_websocket_connection(
     let (control_tx, control_rx) = async_channel::bounded(8);
     let (iopub_tx, iopub_rx) = async_channel::bounded(64);
     let reply_tx_map = Arc::new(DashMap::new());
+    let signal = CancellationToken::new();
 
     let conn = KernelConnection {
         shell_tx,
         control_tx,
         iopub_rx,
         reply_tx_map: reply_tx_map.clone(),
+        signal: signal.clone(),
+        _drop_guard: Arc::new(signal.clone().drop_guard()),
     };
 
     let mut req = websocket_url
@@ -141,7 +145,7 @@ pub async fn create_websocket_connection(
         .map_err(|err| Error::KernelConnect(err.to_string()))?;
 
     let (mut ws_tx, mut ws_rx) = ws.split();
-    tokio::spawn(async move {
+    let send_fut = async move {
         // Send shell and control messages over the WebSocket.
         loop {
             let (msg, channel) = tokio::select! {
@@ -158,12 +162,13 @@ pub async fn create_websocket_connection(
             if ws_tx.send(Message::Binary(payload)).await.is_err() {
                 // The WebSocket has been closed.
                 // TODO: Handle reconnection.
+                error!("WebSocket closed, reconnection not yet implemented");
                 break;
             }
         }
-    });
+    };
 
-    tokio::spawn(async move {
+    let receive_fut = async move {
         // Receieve shell, control, and iopub messages from the WebSocket.
         while let Some(Ok(ws_payload)) = ws_rx.next().await {
             let payload = match ws_payload {
@@ -186,15 +191,20 @@ pub async fn create_websocket_connection(
                     }
                 }
                 "iopub" => {
-                    if iopub_tx.send(msg).await.is_err() {
-                        // The kernel connection has been closed.
-                        break;
-                    }
+                    _ = iopub_tx.send(msg).await;
                 }
                 _ => {
                     warn!("received WebSocket message on unexpected channel: {channel}");
                 }
             }
+        }
+    };
+
+    // Run both futures until cancellation or completion.
+    tokio::spawn(async move {
+        tokio::select! {
+            _ = async { tokio::join!(send_fut, receive_fut) } => {}
+            _ = signal.cancelled() => {}
         }
     });
 

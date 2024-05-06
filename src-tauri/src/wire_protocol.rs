@@ -12,6 +12,7 @@ use dashmap::DashMap;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use time::OffsetDateTime;
 use tokio::sync::oneshot;
+use tokio_util::sync::{CancellationToken, DropGuard};
 use uuid::Uuid;
 
 pub use self::driver_websocket::create_websocket_connection;
@@ -524,7 +525,8 @@ pub struct KernelConnection {
     control_tx: async_channel::Sender<KernelMessage>,
     iopub_rx: async_channel::Receiver<KernelMessage>,
     reply_tx_map: Arc<DashMap<String, oneshot::Sender<KernelMessage>>>,
-    // TODO: Include CancellationToken and reconnection
+    signal: CancellationToken,
+    _drop_guard: Arc<DropGuard>,
 }
 
 impl KernelConnection {
@@ -591,6 +593,8 @@ impl KernelConnection {
         self.shell_tx.close();
         self.control_tx.close();
         self.iopub_rx.close();
+        self.signal.cancel(); // This is the only necessary line, but we close
+                              // the channels for good measure regardless.
     }
 }
 

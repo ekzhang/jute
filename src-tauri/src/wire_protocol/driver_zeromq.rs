@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use dashmap::DashMap;
+use tokio_util::sync::CancellationToken;
 use tracing::{error, warn};
 use zeromq::{Socket, SocketRecv, SocketSend, ZmqMessage};
 
@@ -67,12 +68,15 @@ pub async fn create_zeromq_connection(
     let (control_tx, control_rx) = async_channel::bounded(8);
     let (iopub_tx, iopub_rx) = async_channel::bounded(64);
     let reply_tx_map = Arc::new(DashMap::new());
+    let signal = CancellationToken::new();
 
     let conn = KernelConnection {
         shell_tx,
         control_tx,
         iopub_rx,
         reply_tx_map: reply_tx_map.clone(),
+        signal: signal.clone(),
+        _drop_guard: Arc::new(signal.clone().drop_guard()),
     };
 
     let mut shell = zeromq::DealerSocket::new();
@@ -101,7 +105,7 @@ pub async fn create_zeromq_connection(
 
     let key = signing_key.to_string();
     let tx_map = reply_tx_map.clone();
-    tokio::spawn(async move {
+    let shell_fut = async move {
         // Send and receive shell messages.
         loop {
             tokio::select! {
@@ -128,11 +132,11 @@ pub async fn create_zeromq_connection(
                 else => break,
             }
         }
-    });
+    };
 
     let key = signing_key.to_string();
     let tx_map = reply_tx_map.clone();
-    tokio::spawn(async move {
+    let control_fut = async move {
         // Send and receive control messages.
         loop {
             tokio::select! {
@@ -159,19 +163,23 @@ pub async fn create_zeromq_connection(
                 else => break,
             }
         }
-    });
+    };
 
-    tokio::spawn(async move {
+    let iopub_fut = async move {
         // Receive iopub messages.
         while let Ok(payload) = iopub.recv().await {
             if let Some(msg) = from_zmq_payload(payload) {
-                if iopub_tx.send(msg).await.is_err() {
-                    // The kernel connection has been closed.
-                    break;
-                }
+                _ = iopub_tx.send(msg).await;
             } else {
                 warn!("error converting zmq payload to iopub message");
             }
+        }
+    };
+
+    tokio::spawn(async move {
+        tokio::select! {
+            _ = async { tokio::join!(shell_fut, control_fut, iopub_fut) } => {}
+            _ = signal.cancelled() => {}
         }
     });
 
