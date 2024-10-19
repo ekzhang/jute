@@ -1,5 +1,5 @@
 import { EditorView } from "@codemirror/view";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { createContext } from "react";
 
 export type NotebookOutput = { status: "success" | "error"; data: string };

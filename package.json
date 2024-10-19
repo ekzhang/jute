@@ -17,7 +17,7 @@
     "@codemirror/lint": "^6.4.2",
     "@codemirror/state": "^6.4.0",
     "@codemirror/view": "^6.23.0",
-    "@tauri-apps/api": "^1.5.2",
+    "@tauri-apps/api": "^2.0.2",
     "clsx": "^2.1.0",
     "lucide-react": "^0.331.0",
     "react": "^18.2.0",
@@ -25,7 +25,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5.8",
+    "@tauri-apps/cli": "^2.0.3",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",

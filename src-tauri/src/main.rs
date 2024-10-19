@@ -46,7 +46,7 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet, cpu_usage, run_python])
         .setup(|app| {
-            let main_window = app.get_window("main").unwrap();
+            let main_window = app.get_webview_window("main").unwrap();
             main_window.set_min_size(Some(LogicalSize::new(720.0, 600.0)))?;
             // main_window.set_size(LogicalSize::new(720.0, 800.0))?;
             Ok(())

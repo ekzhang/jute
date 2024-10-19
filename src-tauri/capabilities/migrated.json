@@ -1,0 +1,13 @@
+{
+  "identifier": "migrated",
+  "description": "permissions that were migrated from v1",
+  "local": true,
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-create",
+    "core:window:allow-center",
+    "core:window:allow-request-user-attention",
+    "core:window:allow-start-dragging"
+  ]
+}
