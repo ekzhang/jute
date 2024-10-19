@@ -16,16 +16,16 @@ use crate::wire_protocol::{
 };
 use crate::Error;
 
-/// An active Jupyter kernel, ready to take new commands.
-pub struct ActiveKernel {
+/// A running Jupyter kernel, ready to take commands.
+pub struct Kernel {
     client: JupyterClient,
     kernel_id: String,
     connection: KernelConnection,
 }
 
-impl ActiveKernel {
-    /// Create a new kernel.
-    pub async fn new(client: &JupyterClient, spec_name: &str) -> Result<Self, Error> {
+impl Kernel {
+    /// Start a new kernel on the server.
+    pub async fn start(client: &JupyterClient, spec_name: &str) -> Result<Self, Error> {
         let kernel_info = client.create_kernel(spec_name).await?;
 
         let ws_url = client
@@ -116,17 +116,14 @@ impl JupyterClient {
     }
 
     /// List the active kernels on the Jupyter server.
-    pub async fn list_kernels(&self) -> Result<Vec<JupyterKernelInfo>, Error> {
+    pub async fn list_kernels(&self) -> Result<Vec<KernelInfo>, Error> {
         let url = self.server_url.join("/api/kernels")?;
         let resp = self.http_client.get(url).send().await?.error_for_status()?;
         Ok(resp.json().await?)
     }
 
     /// Get information about a specific kernel by its ID.
-    pub async fn get_kernel_by_id(
-        &self,
-        kernel_id: &str,
-    ) -> Result<Option<JupyterKernelInfo>, Error> {
+    pub async fn get_kernel_by_id(&self, kernel_id: &str) -> Result<Option<KernelInfo>, Error> {
         let url = self.server_url.join(&format!("/api/kernels/{kernel_id}"))?;
         let resp = self.http_client.get(url).send().await?;
         if resp.status() == StatusCode::NOT_FOUND {
@@ -136,7 +133,7 @@ impl JupyterClient {
     }
 
     /// Create a new kernel from the spec with the give name.
-    pub async fn create_kernel(&self, spec_name: &str) -> Result<JupyterKernelInfo, Error> {
+    pub async fn create_kernel(&self, spec_name: &str) -> Result<KernelInfo, Error> {
         let url = self.server_url.join("/api/kernels")?;
         let resp = self
             .http_client
@@ -162,7 +159,7 @@ impl JupyterClient {
 
 /// Information about a running Jupyter kernel.
 #[derive(Clone, Debug, Deserialize)]
-pub struct JupyterKernelInfo {
+pub struct KernelInfo {
     /// The unique identifier of the kernel.
     pub id: String,
 
