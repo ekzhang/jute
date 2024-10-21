@@ -17,6 +17,7 @@ use crate::wire_protocol::{
 use crate::Error;
 
 /// A running Jupyter kernel, ready to take commands.
+#[derive(Clone)]
 pub struct Kernel {
     client: JupyterClient,
     kernel_id: String,

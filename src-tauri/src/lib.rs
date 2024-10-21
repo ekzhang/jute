@@ -7,6 +7,7 @@ use std::io;
 
 pub mod jupyter_client;
 pub mod server;
+pub mod state;
 pub mod wire_protocol;
 
 /// A serializable error type for application errors.

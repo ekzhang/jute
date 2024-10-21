@@ -3,16 +3,14 @@
 
 use std::io;
 
-use jute::Error;
+use jute::{
+    jupyter_client::{JupyterClient, Kernel},
+    state::State,
+    Error,
+};
 use sysinfo::System;
 use tauri::{LogicalSize, Manager};
 use tokio::process::Command;
-
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 #[tauri::command]
 async fn cpu_usage() -> f32 {
@@ -40,11 +38,27 @@ async fn run_python(source_code: &str) -> Result<String, Error> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+/// Start a new Jupyter kernel.
+#[tauri::command]
+async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result<String, Error> {
+    // TODO: Save the client in a better place.
+    let client = JupyterClient::new("", "")?;
+    let kernel = Kernel::start(&client, spec_name).await?;
+    let id = String::from(kernel.id());
+    state.kernels.insert(id.clone(), kernel);
+    Ok(id)
+}
+
 fn main() {
     tracing_subscriber::fmt().init();
 
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, cpu_usage, run_python])
+        .manage(State::new())
+        .invoke_handler(tauri::generate_handler![
+            cpu_usage,
+            run_python,
+            start_kernel,
+        ])
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();
             main_window.set_min_size(Some(LogicalSize::new(720.0, 600.0)))?;
