@@ -109,7 +109,6 @@ export default ({ editorId }: CmEditorProps) => {
       console.warn(`Registering duplicate editorId: ${editorId}`);
     }
 
-    console.log("hi");
     notebook.editors.set(editorId, editor);
     return () => {
       notebook.editors.delete(editorId);
