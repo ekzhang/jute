@@ -30,13 +30,14 @@ import {
   keymap,
   rectangularSelection,
 } from "@codemirror/view";
-import { useContext, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
+import { useStore } from "zustand";
 
-import { NotebookContext } from "./Notebook";
+import { useNotebook } from "./Notebook";
 
-type CmEditorProps = {
+type CellInputProps = {
   /** A globally unique identifier for the editor. */
-  editorId: string;
+  cellId: string;
 };
 
 const editorTheme = EditorView.theme({
@@ -48,8 +49,12 @@ const editorTheme = EditorView.theme({
   },
 });
 
-export default ({ editorId }: CmEditorProps) => {
-  const notebook = useContext(NotebookContext)!;
+export default ({ cellId }: CellInputProps) => {
+  const notebook = useNotebook();
+  const initialText = useStore(
+    notebook.store,
+    (state) => state.cells[cellId].initialText,
+  );
 
   const containerEl = useRef<HTMLDivElement>(null);
 
@@ -83,14 +88,14 @@ export default ({ editorId }: CmEditorProps) => {
             {
               key: "Shift-Enter",
               run: () => {
-                notebook.execute(editorId);
+                notebook.execute(cellId);
                 return true;
               },
             },
             {
               key: "Mod-Enter",
               run: () => {
-                notebook.execute(editorId);
+                notebook.execute(cellId);
                 return true;
               },
             },
@@ -102,18 +107,17 @@ export default ({ editorId }: CmEditorProps) => {
         EditorState.tabSize.of(4),
         editorTheme,
       ],
+      doc: initialText,
       parent: containerEl.current!,
     });
 
-    if (notebook.editors.has(editorId)) {
-      console.warn(`Registering duplicate editorId: ${editorId}`);
+    const ref = notebook.refs.get(cellId);
+    if (ref) {
+      ref.editor = editor;
+    } else {
+      console.warn(`Ref for cell ${cellId} not found`);
     }
-
-    notebook.editors.set(editorId, editor);
-    return () => {
-      notebook.editors.delete(editorId);
-    };
-  }, [editorId]);
+  }, [cellId]);
 
   return <div ref={containerEl} className="cm-editor-container"></div>;
 };

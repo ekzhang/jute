@@ -19,10 +19,12 @@
     "@codemirror/view": "^6.23.0",
     "@tauri-apps/api": "^2.0.2",
     "clsx": "^2.1.0",
+    "immer": "^10.1.1",
     "lucide-react": "^0.331.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "zustand": "^5.0.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.3",
