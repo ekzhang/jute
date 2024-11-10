@@ -84,6 +84,7 @@ export class Notebook {
     try {
       const onEvent = new Channel<RunPythonEvent>();
       let output = "";
+      this.state.setOutput(cellId, { status: "success", data: output });
       onEvent.onmessage = (message) => {
         if (message.event === "stdout" || message.event === "stderr") {
           output += message.data;
