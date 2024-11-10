@@ -1,4 +1,4 @@
-import { CircleIcon, CornerDownRightIcon } from "lucide-react";
+import { CircleIcon, CornerDownRightIcon, PlusIcon } from "lucide-react";
 import { useStore } from "zustand";
 
 import CellInput from "./CellInput";
@@ -33,6 +33,18 @@ export default () => {
           <hr className="mx-2 my-4 border-zinc-200" />
         </div>
       ))}
+
+      <div className="mx-2 my-4">
+        <button
+          className="flex w-full items-center justify-center gap-1.5 rounded border border-zinc-200 p-2 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+          onClick={() => {
+            notebook.addCell("");
+          }}
+        >
+          <PlusIcon size={18} />
+          <span>New cell</span>
+        </button>
+      </div>
     </div>
   );
 };
