@@ -1,8 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::process::Stdio;
-
 use jute::{
     backend::{
         commands::{self, RunCellEvent},
@@ -11,14 +9,8 @@ use jute::{
     state::State,
     Error,
 };
-use serde::Serialize;
 use sysinfo::System;
-use tauri::{
-    ipc::{Channel, IpcResponse},
-    LogicalSize, Manager,
-};
-use tokio::io::{AsyncRead, AsyncReadExt};
-use tokio::process::Command;
+use tauri::{ipc::Channel, LogicalSize, Manager};
 use tracing::info;
 
 #[tauri::command]
@@ -28,60 +20,6 @@ async fn cpu_usage() -> f32 {
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     system.refresh_cpu();
     system.global_cpu_info().cpu_usage()
-}
-
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "snake_case", tag = "event", content = "data")]
-pub enum RunPythonEvent {
-    Stdout(String),
-    Stderr(String),
-    Done { status: i32 },
-}
-
-async fn stream_to_ipc<T: IpcResponse + Clone>(
-    mut stream: impl AsyncRead + Unpin,
-    channel: Channel<T>,
-    make_event: impl Fn(String) -> T,
-) {
-    let mut buf = [0; 8192];
-    while let Ok(n) = stream.read(&mut buf).await {
-        if n == 0 {
-            break;
-        }
-        let s = String::from_utf8_lossy(&buf[..n]);
-        if channel.send(make_event(s.into())).is_err() {
-            break;
-        }
-    }
-}
-
-/// Run some Python code. This is a temporary placeholder for the future, real
-/// implementation based on interactive kernels.
-#[tauri::command]
-async fn run_python(source_code: &str, on_event: Channel<RunPythonEvent>) -> Result<(), Error> {
-    let mut child = Command::new("python3")
-        .args(["-u", "-c", source_code])
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(Error::Subprocess)?;
-
-    let stdout = child.stdout.take().unwrap();
-    let stderr = child.stderr.take().unwrap();
-
-    let h1 = stream_to_ipc(stdout, on_event.clone(), RunPythonEvent::Stdout);
-    let h2 = stream_to_ipc(stderr, on_event.clone(), RunPythonEvent::Stderr);
-
-    let (_, _, result) = tokio::join!(h1, h2, child.wait());
-
-    let status = result.map_err(Error::Subprocess)?;
-
-    // On Unix, the code is None if the process was killed by a signal.
-    let code = status.code().unwrap_or(-1);
-    _ = on_event.send(RunPythonEvent::Done { status: code });
-
-    Ok(())
 }
 
 /// Start a new Jupyter kernel.
@@ -160,7 +98,6 @@ fn main() {
         .manage(State::new())
         .invoke_handler(tauri::generate_handler![
             cpu_usage,
-            run_python,
             start_kernel,
             stop_kernel,
             run_cell,
