@@ -1,4 +1,4 @@
-//! A client that manages Jupyter kernel requests and messages.
+//! Connections to remote Jupyter servers over HTTP and WebSocket.
 
 use std::time::Duration;
 
@@ -11,20 +11,18 @@ use serde_json::json;
 use time::OffsetDateTime;
 use url::Url;
 
-use crate::wire_protocol::{
-    create_websocket_connection, ExecuteInput, KernelConnection, KernelMessage, KernelMessageType,
-};
+use super::{create_websocket_connection, KernelConnection};
 use crate::Error;
 
-/// A running Jupyter kernel, ready to take commands.
+/// A running Jupyter kernel connected over the WebSocket wire protocol.
 #[derive(Clone)]
-pub struct Kernel {
+pub struct RemoteKernel {
     client: JupyterClient,
     kernel_id: String,
-    connection: KernelConnection,
+    conn: KernelConnection,
 }
 
-impl Kernel {
+impl RemoteKernel {
     /// Start a new kernel on the server.
     pub async fn start(client: &JupyterClient, spec_name: &str) -> Result<Self, Error> {
         let kernel_info = client.create_kernel(spec_name).await?;
@@ -39,12 +37,12 @@ impl Kernel {
             ws_url = ws_url.replacen("http://", "ws://", 1);
         }
 
-        let connection = create_websocket_connection(&ws_url, &client.token).await?;
+        let conn = create_websocket_connection(&ws_url, &client.token).await?;
 
         Ok(Self {
             client: client.clone(),
             kernel_id: kernel_info.id,
-            connection,
+            conn,
         })
     }
 
@@ -58,23 +56,16 @@ impl Kernel {
         self.client.kill_kernel(&self.kernel_id).await
     }
 
-    /// Run a block of code input on the kernel.
-    pub async fn run_input(&self, code: &str) -> Result<(), Error> {
-        self.connection
-            .call_shell(KernelMessage::new(
-                KernelMessageType::ExecuteInput,
-                ExecuteInput {
-                    code: code.to_string(),
-                    execution_count: 1,
-                },
-            ))
-            .await?;
-
-        Ok(())
+    /// Get a reference to the kernel connection object.
+    pub fn conn(&self) -> &KernelConnection {
+        &self.conn
     }
 }
 
-/// A stateless HTTP client for a running Jupyter server.
+/// HTTP client for a remote Jupyter server.
+///
+/// This client can make REST API requests and create new WebSocket connections.
+/// It is generally stateless and cheaply cloneable though.
 #[derive(Clone)]
 pub struct JupyterClient {
     server_url: Url,
@@ -158,7 +149,7 @@ impl JupyterClient {
     }
 }
 
-/// Information about a running Jupyter kernel.
+/// Information about a remote Jupyter kernel.
 #[derive(Clone, Debug, Deserialize)]
 pub struct KernelInfo {
     /// The unique identifier of the kernel.

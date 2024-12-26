@@ -1,6 +1,8 @@
-//! Speak the kernel protocol directly to a running subprocess.
-
-#![allow(dead_code)]
+//! Code that starts local kernels to be `jupyter-server` compatible.
+//!
+//! This is currently unused while Jute relies on `jupyter-server`, but in the
+//! future it could replace the Jupyter installation by directly invoking
+//! kernels, or introduce new APIs for developer experience.
 
 use std::process::Stdio;
 
@@ -9,9 +11,11 @@ use tokio::fs;
 use tokio::net::TcpListener;
 use uuid::Uuid;
 
-use super::environment::{self, KernelSpec};
-use crate::wire_protocol::{create_zeromq_connection, KernelConnection};
+use self::environment::KernelSpec;
+use super::{create_zeromq_connection, KernelConnection};
 use crate::Error;
+
+pub mod environment;
 
 /// Represents a connection to an active kernel.
 pub struct LocalKernel {
@@ -91,9 +95,19 @@ impl LocalKernel {
         &self.conn
     }
 
+    /// Return the spec used to start the kernel.
+    pub fn spec(&self) -> &KernelSpec {
+        &self.spec
+    }
+
     /// Check if the kernel is still alive.
     pub fn is_alive(&mut self) -> bool {
-        self.child.try_wait().unwrap().is_none()
+        matches!(self.child.try_wait(), Ok(None))
+    }
+
+    /// Kill the kernel by sending a SIGKILL signal.
+    pub async fn kill(&mut self) -> Result<(), Error> {
+        self.child.kill().await.map_err(Error::Subprocess)
     }
 }
 

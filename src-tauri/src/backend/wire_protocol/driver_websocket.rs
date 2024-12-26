@@ -1,3 +1,12 @@
+//! Adapter for the Jupyter wire protocol over WebSocket.
+//!
+//! This protocol is documented in the `jupyter-server` project at
+//! <https://jupyter-server.readthedocs.io/en/latest/developers/websocket-protocols.html>.
+//!
+//! It is very similar to the ZeroMQ protocol, but there is a thin framing layer
+//! that allows messages to be sent over WebSocket binary payloads instead of
+//! raw TCP sockets.
+
 use std::sync::Arc;
 
 use bytes::Bytes;

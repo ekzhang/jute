@@ -1,3 +1,9 @@
+//! Adapter for the Jupyter wire protocol over ZeroMQ.
+//!
+//! This protocol is documented in the `jupyter-client` project at
+//! <https://jupyter-client.readthedocs.io/en/stable/messaging.html>. It relies
+//! on 5 dedicated sockets for different types of messages.
+
 use std::sync::Arc;
 
 use bytes::Bytes;

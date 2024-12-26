@@ -2,8 +2,8 @@
 
 use std::io::Write;
 
-use jute::{
-    server::{environment, kernel::LocalKernel},
+use jute::backend::{
+    local::{environment, LocalKernel},
     wire_protocol::{
         ErrorReply, ExecuteRequest, ExecuteResult, KernelInfoReply, KernelInfoRequest,
         KernelMessage, KernelMessageType, KernelStatus, Reply, Status, Stream,

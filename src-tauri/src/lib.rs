@@ -5,16 +5,14 @@
 
 use std::io;
 
-pub mod jupyter_client;
-pub mod server;
+pub mod backend;
 pub mod state;
-pub mod wire_protocol;
 
 /// A serializable error type for application errors.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    /// An error occurred while starting a subprocess.
-    #[error("subprocess failed to start: {0}")]
+    /// An error occurred while starting or managing a subprocess.
+    #[error("failed to run subprocess: {0}")]
     Subprocess(io::Error),
 
     /// Could not connect to the kernel.

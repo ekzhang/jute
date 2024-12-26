@@ -2,13 +2,13 @@
 
 use dashmap::DashMap;
 
-use crate::jupyter_client::Kernel;
+use crate::backend::remote::RemoteKernel;
 
 /// State for the running Tauri application.
 #[derive(Default)]
 pub struct State {
     /// Current kernels running in the application.
-    pub kernels: DashMap<String, Kernel>,
+    pub kernels: DashMap<String, RemoteKernel>,
 }
 
 impl State {

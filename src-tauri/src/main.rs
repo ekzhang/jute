@@ -4,7 +4,10 @@
 use std::process::Stdio;
 
 use jute::{
-    jupyter_client::{JupyterClient, Kernel},
+    backend::{
+        commands,
+        remote::{JupyterClient, RemoteKernel},
+    },
     state::State,
     Error,
 };
@@ -16,6 +19,7 @@ use tauri::{
 };
 use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::process::Command;
+use tracing::info;
 
 #[tauri::command]
 async fn cpu_usage() -> f32 {
@@ -85,11 +89,42 @@ async fn run_python(source_code: &str, on_event: Channel<RunPythonEvent>) -> Res
 async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result<String, Error> {
     // TODO: Save the client in a better place.
     let client = JupyterClient::new("", "")?;
-    let kernel = Kernel::start(&client, spec_name).await?;
-    let id = String::from(kernel.id());
-    state.kernels.insert(id.clone(), kernel);
-    Ok(id)
+    let kernel = RemoteKernel::start(&client, spec_name).await?;
+
+    let info = commands::kernel_info(kernel.conn()).await?;
+    info!(banner = info.banner, "started new jute kernel");
+
+    let kernel_id = String::from(kernel.id());
+    state.kernels.insert(kernel_id.clone(), kernel);
+    Ok(kernel_id)
 }
+
+#[tauri::command]
+async fn stop_kernel(kernel_id: &str, state: tauri::State<'_, State>) -> Result<(), Error> {
+    info!("stopping jute kernel {kernel_id}");
+    let (_, kernel) = state
+        .kernels
+        .remove(kernel_id)
+        .ok_or(Error::KernelDisconnect)?;
+    kernel.kill().await?;
+    Ok(())
+}
+
+// #[tauri::command]
+// async fn run_cell(
+//     kernel_id: &str,
+//     code: &str,
+//     on_event: Channel<RunPythonEvent>,
+//     state: tauri::State<'_, State>,
+// ) -> Result<(), Error> {
+//     let kernel = state
+//         .kernels
+//         .get(kernel_id)
+//         .ok_or(Error::KernelDisconnect)?
+//         .clone();
+//     kernel.run_input(code).await?;
+//     Ok(())
+// }
 
 fn main() {
     tracing_subscriber::fmt().init();
@@ -100,6 +135,7 @@ fn main() {
             cpu_usage,
             run_python,
             start_kernel,
+            stop_kernel,
         ])
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();
