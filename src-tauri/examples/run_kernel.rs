@@ -59,6 +59,12 @@ async fn main() {
                 RunCellEvent::ExecuteResult(msg) => {
                     println!("-> {}", msg.data["text/plain"].as_str().unwrap())
                 }
+                RunCellEvent::DisplayData(msg) => {
+                    println!("DisplayData: {:?}", msg.data.keys());
+                }
+                RunCellEvent::UpdateDisplayData(msg) => {
+                    println!("UpdateDisplayData: {:?}", msg.data.keys());
+                }
                 RunCellEvent::Error(msg) => {
                     for line in &msg.traceback {
                         eprintln!("{line}");

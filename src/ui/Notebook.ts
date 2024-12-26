@@ -1,6 +1,7 @@
 import { EditorView } from "@codemirror/view";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { createContext, useContext } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
@@ -13,6 +14,16 @@ type RunCellEvent =
         execution_count: number;
         data: Record<string, any>;
         metadata: Record<string, any>;
+      };
+    }
+  | {
+      event: "display_data" | "update_display_data";
+      data: {
+        data: Record<string, any>;
+        metadata: Record<string, any>;
+        transient: {
+          display_id: string | null;
+        } | null;
       };
     }
   | {
@@ -37,7 +48,11 @@ export type NotebookStoreState = {
   };
 };
 
-export type NotebookOutput = { status: "success" | "error"; data: string };
+export type NotebookOutput = {
+  status: "success" | "error";
+  output: string;
+  displays: { [displayId: string]: string };
+};
 
 /** Actions are kept private, only to be used from the `Notebook` class. */
 type NotebookStoreActions = {
@@ -115,23 +130,79 @@ export class Notebook {
     try {
       const onEvent = new Channel<RunCellEvent>();
       let output = "";
-      this.state.setOutput(cellId, { status: "success", data: output });
+      let displays: Record<string, any> = {};
+      const update = () =>
+        this.state.setOutput(cellId, {
+          status: "success",
+          output,
+          displays,
+        });
+      update();
+
       onEvent.onmessage = (message: RunCellEvent) => {
         if (message.event === "stdout" || message.event === "stderr") {
           output += message.data;
-          this.state.setOutput(cellId, { status: "success", data: output });
+          update();
         } else if (message.event === "execute_result") {
           // This means that there was a return value for the cell.
           output += message.data.data["text/plain"];
+          update();
+        } else if (message.event === "display_data") {
+          const displayId = message.data.transient?.display_id || uuidv4();
+          const html = displayDataToHtml(message.data.data);
+          if (html) {
+            displays = { ...displays, [displayId]: html };
+            update();
+          } else {
+            console.warn("Skipping unhandled display data", message.data);
+          }
+        } else if (message.event === "update_display_data") {
+          const displayId = message.data.transient?.display_id;
+          if (displayId && Object.hasOwn(displays, displayId)) {
+            const html = displayDataToHtml(message.data.data);
+            if (html) {
+              displays = { ...displays, [displayId]: html };
+              update();
+            } else {
+              console.warn("Skipping unhandled display data", message.data);
+            }
+          } else {
+            console.warn("Skipping display for bad display ID", message.data);
+          }
+        } else {
+          console.warn("Skipping unhandled event", message);
         }
       };
 
       await invoke("run_cell", { kernelId: this.kernelId, code, onEvent });
-      this.state.setOutput(cellId, { status: "success", data: output });
+      this.state.setOutput(cellId, { status: "success", output, displays });
     } catch (error: any) {
-      this.state.setOutput(cellId, { status: "error", data: error });
+      this.state.setOutput(cellId, {
+        status: "error",
+        output: error,
+        displays: {},
+      });
     }
   }
+}
+
+function displayDataToHtml(data: Record<string, any>): string | null {
+  for (const imageType of [
+    "image/png",
+    "image/jpeg",
+    "image/svg+xml",
+    "image/bmp",
+    "image/gif",
+  ]) {
+    if (Object.hasOwn(data, imageType)) {
+      const value = data[imageType];
+      if (typeof value === "string") {
+        return `<img src="data:${imageType};base64,${value}" alt="display data" />`;
+      }
+    }
+  }
+
+  return null;
 }
 
 export const NotebookContext = createContext<Notebook | undefined>(undefined);

@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use super::{
     wire_protocol::{
-        ErrorReply, ExecuteRequest, ExecuteResult, KernelInfoReply, KernelInfoRequest,
+        DisplayData, ErrorReply, ExecuteRequest, ExecuteResult, KernelInfoReply, KernelInfoRequest,
         KernelMessage, KernelMessageType, KernelStatus, Reply, Status, Stream,
     },
     KernelConnection,
@@ -38,6 +38,12 @@ pub enum RunCellEvent {
 
     /// Result of cell execution (i.e., if the last line is an expression).
     ExecuteResult(ExecuteResult),
+
+    /// Display data in a MIME type (e.g., a matplotlib chart).
+    DisplayData(DisplayData),
+
+    /// Update previously-displayed data with a display ID.
+    UpdateDisplayData(DisplayData),
 
     /// Error if the cell raised an exception.
     Error(ErrorReply),
@@ -95,6 +101,14 @@ pub async fn run_cell(
                 KernelMessageType::ExecuteResult => {
                     let msg = msg.into_typed::<ExecuteResult>()?;
                     _ = tx.send(RunCellEvent::ExecuteResult(msg.content)).await;
+                }
+                KernelMessageType::DisplayData => {
+                    let msg = msg.into_typed::<DisplayData>()?;
+                    _ = tx.send(RunCellEvent::DisplayData(msg.content)).await;
+                }
+                KernelMessageType::UpdateDisplayData => {
+                    let msg = msg.into_typed::<DisplayData>()?;
+                    _ = tx.send(RunCellEvent::UpdateDisplayData(msg.content)).await;
                 }
                 KernelMessageType::Error => {
                     let msg = msg.into_typed::<ErrorReply>()?;

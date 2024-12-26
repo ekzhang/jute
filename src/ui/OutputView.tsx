@@ -11,13 +11,19 @@ export default ({ value }: OutputViewProps) => {
     return null;
   }
   return (
-    <pre
-      className={clsx(
-        value.status === "error" && "text-red-500",
-        "select-text whitespace-pre-wrap break-words text-sm",
-      )}
-    >
-      {value.data}
-    </pre>
+    <div>
+      <pre
+        className={clsx(
+          value.status === "error" && "text-red-500",
+          "select-text whitespace-pre-wrap break-words text-sm",
+        )}
+      >
+        {value.output}
+      </pre>
+
+      {Object.entries(value.displays).map(([displayId, html]) => (
+        <div key={displayId} dangerouslySetInnerHTML={{ __html: html }}></div>
+      ))}
+    </div>
   );
 };
