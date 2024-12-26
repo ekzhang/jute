@@ -1,5 +1,6 @@
 import { EditorView } from "@codemirror/view";
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { encode } from "html-entities";
 import { createContext, useContext } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
@@ -149,7 +150,10 @@ export class Notebook {
           update();
         } else if (message.event === "display_data") {
           const displayId = message.data.transient?.display_id || uuidv4();
-          const html = displayDataToHtml(message.data.data);
+          const html = displayDataToHtml(
+            message.data.data,
+            message.data.metadata,
+          );
           if (html) {
             displays = { ...displays, [displayId]: html };
             update();
@@ -159,7 +163,10 @@ export class Notebook {
         } else if (message.event === "update_display_data") {
           const displayId = message.data.transient?.display_id;
           if (displayId && Object.hasOwn(displays, displayId)) {
-            const html = displayDataToHtml(message.data.data);
+            const html = displayDataToHtml(
+              message.data.data,
+              message.data.metadata,
+            );
             if (html) {
               displays = { ...displays, [displayId]: html };
               update();
@@ -186,7 +193,15 @@ export class Notebook {
   }
 }
 
-function displayDataToHtml(data: Record<string, any>): string | null {
+/**
+ * Returns the HTML form of a display data message.
+ *
+ * https://jupyter-client.readthedocs.io/en/stable/messaging.html#display-data
+ */
+function displayDataToHtml(
+  data: Record<string, any>,
+  metadata: Record<string, any>,
+): string | null {
   for (const imageType of [
     "image/png",
     "image/jpeg",
@@ -196,8 +211,20 @@ function displayDataToHtml(data: Record<string, any>): string | null {
   ]) {
     if (Object.hasOwn(data, imageType)) {
       const value = data[imageType];
+      const alt = String(data["text/plain"]) ?? "";
+      const meta = metadata[imageType];
       if (typeof value === "string") {
-        return `<img src="data:${imageType};base64,${value}" alt="display data" />`;
+        let image = `<img src="data:${imageType};base64,${encode(value)}" alt="${encode(alt)}"`;
+        if (meta) {
+          if (typeof meta.height === "number" && meta.height > 0) {
+            image += ` height="${meta.height}"`;
+          }
+          if (typeof meta.width === "number" && meta.width > 0) {
+            image += ` width="${meta.width}"`;
+          }
+        }
+        image += " />";
+        return image;
       }
     }
   }
