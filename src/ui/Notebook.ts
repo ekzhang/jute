@@ -229,6 +229,11 @@ function displayDataToHtml(
     }
   }
 
+  let value = data["text/plain"];
+  if (typeof value === "string") {
+    return `<pre>${encode(value)}</pre>`;
+  }
+
   return null;
 }
 
