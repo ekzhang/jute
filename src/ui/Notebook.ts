@@ -4,10 +4,26 @@ import { createContext, useContext } from "react";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-type RunPythonEvent =
+type RunCellEvent =
   | { event: "stdout"; data: string }
   | { event: "stderr"; data: string }
-  | { event: "done"; data: { status: number } };
+  | {
+      event: "execute_result";
+      data: {
+        execution_count: number;
+        data: Record<string, any>;
+        metadata: Record<string, any>;
+      };
+    }
+  | {
+      event: "error";
+      data: {
+        ename: string;
+        evalue: string;
+        traceback: string[];
+      };
+    }
+  | { event: "disconnect"; data: string };
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
 
@@ -34,6 +50,12 @@ type CellHandle = {
 };
 
 export class Notebook {
+  /** ID of the running kernel, populated after the kernel is started. */
+  kernelId: string;
+
+  /** Promise that resolves when the kernel is started. */
+  kernelStartPromise: Promise<void>;
+
   /** Zustand object used to reactively update DOM nodes. */
   store: StoreApi<NotebookStore>;
 
@@ -41,6 +63,11 @@ export class Notebook {
   refs: Map<string, CellHandle>;
 
   constructor() {
+    this.kernelId = "";
+    this.kernelStartPromise = (async () => {
+      this.kernelId = await invoke("start_kernel", { specName: "python3" });
+    })();
+
     this.store = createStore<NotebookStore>()(
       immer<NotebookStore>((set) => ({
         cellIds: [],
@@ -76,23 +103,30 @@ export class Notebook {
   }
 
   async execute(cellId: string) {
+    if (!this.kernelId) {
+      await this.kernelStartPromise;
+    }
+
     const editor = this.refs.get(cellId)?.editor;
     if (!editor) {
       throw new Error(`Cell ${cellId} not found`);
     }
     const code = editor.state.doc.toString();
     try {
-      const onEvent = new Channel<RunPythonEvent>();
+      const onEvent = new Channel<RunCellEvent>();
       let output = "";
       this.state.setOutput(cellId, { status: "success", data: output });
-      onEvent.onmessage = (message) => {
+      onEvent.onmessage = (message: RunCellEvent) => {
         if (message.event === "stdout" || message.event === "stderr") {
           output += message.data;
           this.state.setOutput(cellId, { status: "success", data: output });
+        } else if (message.event === "execute_result") {
+          // This means that there was a return value for the cell.
+          output += message.data.data["text/plain"];
         }
       };
 
-      await invoke("run_python", { sourceCode: code, onEvent });
+      await invoke("run_cell", { kernelId: this.kernelId, code, onEvent });
       this.state.setOutput(cellId, { status: "success", data: output });
     } catch (error: any) {
       this.state.setOutput(cellId, { status: "error", data: error });

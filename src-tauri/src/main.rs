@@ -5,8 +5,8 @@ use std::process::Stdio;
 
 use jute::{
     backend::{
-        commands,
-        remote::{JupyterClient, RemoteKernel},
+        commands::{self, RunCellEvent},
+        local::{environment, LocalKernel},
     },
     state::State,
     Error,
@@ -88,8 +88,28 @@ async fn run_python(source_code: &str, on_event: Channel<RunPythonEvent>) -> Res
 #[tauri::command]
 async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result<String, Error> {
     // TODO: Save the client in a better place.
-    let client = JupyterClient::new("", "")?;
-    let kernel = RemoteKernel::start(&client, spec_name).await?;
+    // let client = JupyterClient::new("", "")?;
+
+    // Temporary hack to just start a kernel locally with ZeroMQ.
+    let kernels = environment::list_kernels(None).await;
+    let mut kernel_spec = match kernels
+        .iter()
+        .find(|(path, _spec)| path.file_name().and_then(|s| s.to_str()) == Some(spec_name))
+    {
+        Some((_, kernel_spec)) => kernel_spec.clone(),
+        None => {
+            return Err(Error::KernelConnect(format!(
+                "no kernel named {spec_name:?} found"
+            )))
+        }
+    };
+
+    if kernel_spec.argv[0] == "python" {
+        // Temporary hack
+        kernel_spec.argv[0] = "python3.11".into();
+    }
+
+    let kernel = LocalKernel::start(&kernel_spec).await?;
 
     let info = commands::kernel_info(kernel.conn()).await?;
     info!(banner = info.banner, "started new jute kernel");
@@ -102,7 +122,7 @@ async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result
 #[tauri::command]
 async fn stop_kernel(kernel_id: &str, state: tauri::State<'_, State>) -> Result<(), Error> {
     info!("stopping jute kernel {kernel_id}");
-    let (_, kernel) = state
+    let (_, mut kernel) = state
         .kernels
         .remove(kernel_id)
         .ok_or(Error::KernelDisconnect)?;
@@ -110,21 +130,28 @@ async fn stop_kernel(kernel_id: &str, state: tauri::State<'_, State>) -> Result<
     Ok(())
 }
 
-// #[tauri::command]
-// async fn run_cell(
-//     kernel_id: &str,
-//     code: &str,
-//     on_event: Channel<RunPythonEvent>,
-//     state: tauri::State<'_, State>,
-// ) -> Result<(), Error> {
-//     let kernel = state
-//         .kernels
-//         .get(kernel_id)
-//         .ok_or(Error::KernelDisconnect)?
-//         .clone();
-//     kernel.run_input(code).await?;
-//     Ok(())
-// }
+#[tauri::command]
+async fn run_cell(
+    kernel_id: &str,
+    code: &str,
+    on_event: Channel<RunCellEvent>,
+    state: tauri::State<'_, State>,
+) -> Result<(), Error> {
+    let conn = state
+        .kernels
+        .get(kernel_id)
+        .ok_or(Error::KernelDisconnect)?
+        .conn()
+        .clone();
+
+    let rx = commands::run_cell(&conn, code).await?;
+    while let Ok(event) = rx.recv().await {
+        if on_event.send(event).is_err() {
+            break;
+        }
+    }
+    Ok(())
+}
 
 fn main() {
     tracing_subscriber::fmt().init();
@@ -136,6 +163,7 @@ fn main() {
             run_python,
             start_kernel,
             stop_kernel,
+            run_cell,
         ])
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();

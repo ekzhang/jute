@@ -20,6 +20,7 @@ pub mod environment;
 /// Represents a connection to an active kernel.
 pub struct LocalKernel {
     child: tokio::process::Child,
+    kernel_id: String,
 
     spec: KernelSpec,
     conn: KernelConnection,
@@ -48,8 +49,9 @@ impl LocalKernel {
             "key": signing_key,
         });
 
+        let kernel_id = Uuid::new_v4().to_string();
         let runtime_dir = environment::runtime_dir();
-        let connection_filename = runtime_dir + &format!("jute-{}.json", Uuid::new_v4());
+        let connection_filename = runtime_dir + &format!("jute-{kernel_id}.json");
         fs::write(&connection_filename, connection_file.to_string())
             .await
             .map_err(|err| {
@@ -85,9 +87,15 @@ impl LocalKernel {
 
         Ok(Self {
             child,
+            kernel_id,
             spec: spec.clone(),
             conn,
         })
+    }
+
+    /// Get the kernel ID.
+    pub fn id(&self) -> &str {
+        &self.kernel_id
     }
 
     /// Get the kernel connection object.

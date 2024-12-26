@@ -2,13 +2,13 @@
 
 use dashmap::DashMap;
 
-use crate::backend::remote::RemoteKernel;
+use crate::backend::local::LocalKernel;
 
 /// State for the running Tauri application.
 #[derive(Default)]
 pub struct State {
     /// Current kernels running in the application.
-    pub kernels: DashMap<String, RemoteKernel>,
+    pub kernels: DashMap<String, LocalKernel>,
 }
 
 impl State {

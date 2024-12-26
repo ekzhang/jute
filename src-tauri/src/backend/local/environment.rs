@@ -102,8 +102,8 @@ async fn list_kernels_from_path(path: &str) -> Vec<(PathBuf, KernelSpec)> {
         return kernels;
     };
     while let Ok(Some(entry)) = items.next_entry().await {
-        let kernel_path = entry.path().join("kernel.json");
-        if let Ok(kernel_json) = fs::read(&kernel_path).await {
+        let kernel_path = entry.path();
+        if let Ok(kernel_json) = fs::read(&kernel_path.join("kernel.json")).await {
             if let Ok(kernel) = serde_json::from_slice(&kernel_json) {
                 kernels.push((kernel_path, kernel));
             }
