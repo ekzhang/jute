@@ -31,7 +31,7 @@ async fn cpu_usage() -> f32 {
 }
 
 #[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase", tag = "event", content = "data")]
+#[serde(rename_all = "snake_case", tag = "event", content = "data")]
 pub enum RunPythonEvent {
     Stdout(String),
     Stderr(String),

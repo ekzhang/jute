@@ -3,11 +3,8 @@
 use std::io::Write;
 
 use jute::backend::{
+    commands::{self, RunCellEvent},
     local::{environment, LocalKernel},
-    wire_protocol::{
-        ErrorReply, ExecuteRequest, ExecuteResult, KernelInfoReply, KernelInfoRequest,
-        KernelMessage, KernelMessageType, KernelStatus, Reply, Status, Stream,
-    },
 };
 
 #[tokio::main]
@@ -43,20 +40,8 @@ async fn main() {
 
     println!("\nStarted kernel.");
 
-    {
-        let conn = kernel.conn();
-        let mut req = conn
-            .call_shell(KernelMessage::new(
-                KernelMessageType::KernelInfoRequest,
-                KernelInfoRequest {},
-            ))
-            .await
-            .unwrap();
-        let msg = req.get_reply::<KernelInfoReply>().await.unwrap();
-        if let Reply::Ok(info) = &msg.content {
-            println!("{}", info.banner);
-        }
-    }
+    let info = commands::kernel_info(kernel.conn()).await.unwrap();
+    println!("{}", info.banner);
 
     while kernel.is_alive() {
         print!("> ");
@@ -65,55 +50,24 @@ async fn main() {
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
 
-        let conn = kernel.conn();
-        while conn.try_recv_iopub().is_some() {}
+        let rx = commands::run_cell(kernel.conn(), &input).await.unwrap();
 
-        conn.call_shell(KernelMessage::new(
-            KernelMessageType::ExecuteRequest,
-            ExecuteRequest {
-                code: input,
-                silent: false,
-                store_history: true,
-                user_expressions: Default::default(),
-                allow_stdin: false,
-                stop_on_error: true,
-            },
-        ))
-        .await
-        .unwrap();
-
-        let mut status = KernelStatus::Busy;
-        while status != KernelStatus::Idle {
-            let msg = conn.recv_iopub().await.unwrap();
-            match msg.header.msg_type {
-                KernelMessageType::Status => {
-                    let msg = msg.into_typed::<Status>().unwrap();
-                    // println!("Kernel status: {:?}", msg.content.execution_state);
-                    status = msg.content.execution_state;
+        while let Ok(event) = rx.recv().await {
+            match event {
+                RunCellEvent::Stdout(text) => print!("{}", text),
+                RunCellEvent::Stderr(text) => eprint!("{}", text),
+                RunCellEvent::ExecuteResult(msg) => {
+                    println!("-> {}", msg.data["text/plain"].as_str().unwrap())
                 }
-                KernelMessageType::Stream => {
-                    let msg = msg.into_typed::<Stream>().unwrap();
-                    if msg.content.name == "stdout" {
-                        print!("{}", msg.content.text);
-                    } else {
-                        eprint!("{}", msg.content.text);
+                RunCellEvent::Error(msg) => {
+                    for line in &msg.traceback {
+                        eprintln!("{line}");
                     }
                 }
-                // KernelMessageType::ExecuteInput => {
-                //     let msg: KernelMessage<ExecuteInput> = msg.into_typed().unwrap();
-                //     println!("Kernel is executing: {}", msg.content.code);
-                // }
-                KernelMessageType::ExecuteResult => {
-                    let msg = msg.into_typed::<ExecuteResult>().unwrap();
-                    println!("-> {}", msg.content.data["text/plain"].as_str().unwrap());
+                RunCellEvent::Disconnect(msg) => {
+                    eprintln!("Kernel disconnected abnormally: {}", msg);
+                    break;
                 }
-                KernelMessageType::Error => {
-                    let msg = msg.into_typed::<ErrorReply>().unwrap();
-                    for line in &msg.content.traceback {
-                        println!("{line}");
-                    }
-                }
-                _ => (),
             }
         }
     }

@@ -39,7 +39,7 @@ pub struct KernelSpec {
 
 /// The interrupt mode of the kernel.
 #[derive(Default, Copy, Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum KernelInterruptMode {
     /// Interrupts are communicated by sending a signal.
     #[default]
