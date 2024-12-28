@@ -44,7 +44,7 @@ async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result
 
     if kernel_spec.argv[0] == "python" {
         // Temporary hack
-        kernel_spec.argv[0] = "python3.11".into();
+        kernel_spec.argv[0] = "/opt/homebrew/bin/python3.11".into();
     }
 
     let kernel = LocalKernel::start(&kernel_spec).await?;
