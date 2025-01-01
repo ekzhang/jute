@@ -21,7 +21,6 @@
     "@codemirror/state": "^6.5.0",
     "@codemirror/view": "^6.36.1",
     "@fontsource-variable/fira-code": "^5.1.1",
-    "@fontsource-variable/inconsolata": "^5.1.1",
     "@tauri-apps/api": "^2.1.1",
     "clsx": "^2.1.1",
     "html-entities": "^2.5.2",
