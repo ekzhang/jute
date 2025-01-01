@@ -1,4 +1,4 @@
-import { EditorView } from "@codemirror/view";
+import type { EditorView } from "@codemirror/view";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { encode } from "html-entities";
 import { createContext, useContext } from "react";

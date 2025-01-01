@@ -1,3 +1,4 @@
+import "@fontsource-variable/fira-code";
 import { invoke } from "@tauri-apps/api/core";
 import { createRoot } from "react-dom/client";
 

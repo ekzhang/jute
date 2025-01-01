@@ -1,9 +1,12 @@
 import { CircleIcon, CornerDownRightIcon, PlusIcon } from "lucide-react";
+import { Suspense, lazy } from "react";
 import { useStore } from "zustand";
 
-import CellInput from "./CellInput";
+import CellInputFallback from "./CellInputFallback";
 import { useNotebook } from "./Notebook";
 import OutputView from "./OutputView";
+
+const CellInput = lazy(() => import("./CellInput"));
 
 export default function NotebookCells() {
   const notebook = useNotebook();
@@ -17,7 +20,9 @@ export default function NotebookCells() {
           <div className="flex items-start gap-2 px-4">
             <CircleIcon className="my-[6px] h-3.5 w-3.5 fill-zinc-200 stroke-none" />
             <div className="flex-1">
-              <CellInput cellId={id} />
+              <Suspense fallback={<CellInputFallback cellId={id} />}>
+                <CellInput cellId={id} />
+              </Suspense>
             </div>
           </div>
           {cells[id]?.output && (

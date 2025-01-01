@@ -47,8 +47,16 @@ const editorTheme = EditorView.theme({
   "&.cm-focused": {
     outline: "none",
   },
+  "& .cm-scroller": {
+    fontFamily: "Fira Code Variable, ui-monospace, monospace",
+    fontVariantLigatures: "none",
+  },
 });
 
+/**
+ * Cell input for a notebook. Note that this component requires CodeMirror, so
+ * it's wrapped in lazy loading to improve initial render speed.
+ */
 export default function CellInput({ cellId }: Props) {
   const notebook = useNotebook();
   const initialText = useStore(
