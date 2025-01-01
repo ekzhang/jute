@@ -33,6 +33,7 @@ import {
 import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
 
+import CellInputFallback from "./CellInputFallback";
 import { useNotebook } from "./Notebook";
 
 type Props = {
@@ -129,5 +130,12 @@ export default function CellInput({ cellId }: Props) {
     return () => editor.destroy();
   }, [cellId, notebook]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <div ref={containerEl} className="cm-editor-container"></div>;
+  return (
+    <div ref={containerEl}>
+      {/* Eliminate flickering when the editor first loads in. */}
+      <div className="hidden only:block">
+        <CellInputFallback cellId={cellId} />
+      </div>
+    </div>
+  );
 }
