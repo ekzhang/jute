@@ -6,6 +6,10 @@ Double-click to open any Jupyter notebook in a beautiful, streamlined desktop
 app. Run code in 40 languages both locally, and on powerful cloud kernels (with
 GPUs). Collaborate with real-time multiplayer.
 
+<p align="center">
+  <img src="https://i.imgur.com/xYQeE3d.png" width="600">
+</p>
+
 Jute is also designed to integrate modern features: code completion, semantic
 highlighting, simple standalone kernels, automatic formatting, and AI.
 
