@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::env;
+
 use jute::{
     backend::{
         commands::{self, RunCellEvent},
@@ -43,8 +45,12 @@ async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result
     };
 
     if kernel_spec.argv[0] == "python" {
-        // Temporary hack
-        kernel_spec.argv[0] = "/opt/homebrew/bin/python3.11".into();
+        if let Ok(python_path) = env::var("PYTHON_PATH") {
+            kernel_spec.argv[0] = python_path;
+        } else {
+            // Temporary hack
+            kernel_spec.argv[0] = "/opt/homebrew/bin/python3.11".into();
+        }
     }
 
     let kernel = LocalKernel::start(&kernel_spec).await?;

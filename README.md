@@ -98,10 +98,46 @@ but it may be less compatible with the existing Jupyter ecosystem.
 
 Tauri, React, Rust.
 
-Making an alternate frontend is only possible due to the moumental engineering
+Making an alternate frontend is only possible due to the monumental engineering
 effort of the Jupyter Project.
+
+## Development
+
+To run Jute locally, you must supply it with access to a Jupyter kernel.
+Currently, this is done by supplying environment variables to tell Jute where to
+find a Python executable and a
+[Jupyter data directory](https://docs.jupyter.org/en/stable/use/jupyter-directories.html#data-files).
+
+One isolated way of doing so is to use a virtual environment. Here's how you can
+use the `experiment/` directory to set up a virtual environment and run Jute:
+
+```sh
+cd experiment/
+uv sync # this will create a venv at experiment/.venv and install jupyter into it
+```
+
+After you have a Jupyter kernel available, you can start Jute with:
+
+```sh
+JUPYTER_DATA_DIR=... PYTHON_PATH=... npm run tauri dev
+```
+
+Note that if you've installed Jupyter outside of a virtual environment, you
+don't need to supply the `JUPYTER_DATA_DIR`, as Jute will auto-discover the
+directory based on Jupyter's defaults.
+
+If you've installed Jupyter into the `experiment/` directory as described above,
+you can start Jute with:
+
+```sh
+JUPYTER_DATA_DIR=~/path/to/jute/experiment/.venv/share/jupyter/ PYTHON_PATH=~/path/to/jute/experiment/.venv/bin/python npm run tauri dev
+```
 
 ## Author
 
 - [Eric Zhang](https://www.ekzhang.com/)
   ([@ekzhang1](https://twitter.com/ekzhang1))
+
+```
+
+```
