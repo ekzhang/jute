@@ -2,11 +2,11 @@ import clsx from "clsx";
 
 import { NotebookOutput } from "./Notebook";
 
-export type OutputViewProps = {
+type Props = {
   value: NotebookOutput | undefined;
 };
 
-export default ({ value }: OutputViewProps) => {
+export default ({ value }: Props) => {
   if (!value) {
     return null;
   }

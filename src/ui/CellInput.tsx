@@ -35,7 +35,7 @@ import { useStore } from "zustand";
 
 import { useNotebook } from "./Notebook";
 
-type CellInputProps = {
+type Props = {
   /** A globally unique identifier for the editor. */
   cellId: string;
 };
@@ -49,7 +49,7 @@ const editorTheme = EditorView.theme({
   },
 });
 
-export default ({ cellId }: CellInputProps) => {
+export default ({ cellId }: Props) => {
   const notebook = useNotebook();
   const initialText = useStore(
     notebook.store,
