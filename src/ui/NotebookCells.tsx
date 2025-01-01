@@ -5,7 +5,7 @@ import CellInput from "./CellInput";
 import { useNotebook } from "./Notebook";
 import OutputView from "./OutputView";
 
-export default () => {
+export default function NotebookCells() {
   const notebook = useNotebook();
   const cellIds = useStore(notebook.store, (state) => state.cellIds);
   const cells = useStore(notebook.store, (state) => state.cells);
@@ -47,4 +47,4 @@ export default () => {
       </div>
     </div>
   );
-};
+}

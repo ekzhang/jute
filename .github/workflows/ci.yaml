@@ -63,8 +63,23 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20.9.0"
+          node-version: "20.18.0"
 
       - run: npm ci
 
-      - run: npx prettier --check .
+      - run: npm run format:check
+
+  frontend:
+    name: Frontend lint and build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.18.0"
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build

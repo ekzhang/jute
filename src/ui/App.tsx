@@ -1,7 +1,7 @@
 import NotebookView from "./NotebookView";
 import TitleBar from "./TitleBar";
 
-export default () => {
+export default function App() {
   const title = "sediment_analysis.ipynb";
 
   return (
@@ -10,4 +10,4 @@ export default () => {
       <NotebookView />
     </main>
   );
-};
+}

@@ -6,7 +6,7 @@ type Props = {
   value: NotebookOutput | undefined;
 };
 
-export default ({ value }: Props) => {
+export default function OutputView({ value }: Props) {
   if (!value) {
     return null;
   }
@@ -26,4 +26,4 @@ export default ({ value }: Props) => {
       ))}
     </div>
   );
-};
+}

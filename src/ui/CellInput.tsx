@@ -49,7 +49,7 @@ const editorTheme = EditorView.theme({
   },
 });
 
-export default ({ cellId }: Props) => {
+export default function CellInput({ cellId }: Props) {
   const notebook = useNotebook();
   const initialText = useStore(
     notebook.store,
@@ -117,7 +117,9 @@ export default ({ cellId }: Props) => {
     } else {
       console.warn(`Ref for cell ${cellId} not found`);
     }
-  }, [cellId]);
+
+    return () => editor.destroy();
+  }, [cellId, notebook]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerEl} className="cm-editor-container"></div>;
-};
+}

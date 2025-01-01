@@ -211,7 +211,7 @@ function displayDataToHtml(
   ]) {
     if (Object.hasOwn(data, imageType)) {
       const value = data[imageType];
-      const alt = String(data["text/plain"]) ?? "";
+      const alt = String(data["text/plain"] ?? "");
       const meta = metadata[imageType];
       if (typeof value === "string") {
         let image = `<img src="data:${imageType};base64,${encode(value)}" alt="${encode(alt)}"`;
@@ -229,7 +229,7 @@ function displayDataToHtml(
     }
   }
 
-  let value = data["text/plain"];
+  const value = data["text/plain"];
   if (typeof value === "string") {
     return `<pre>${encode(value)}</pre>`;
   }

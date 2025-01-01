@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { Notebook, NotebookContext } from "./Notebook";
 import NotebookCells from "./NotebookCells";
 
-export default () => {
+export default function NotebookView() {
   // Single mutable object that is shared between all parts of the notebook.
   const notebook = useMemo(() => new Notebook(), []);
 
@@ -22,7 +22,7 @@ export default () => {
 import numpy as np
 
 plt.plot(np.random.randn(200))`);
-  }, []);
+  }, [notebook]);
 
   return (
     <NotebookContext.Provider value={notebook}>
@@ -35,4 +35,4 @@ plt.plot(np.random.randn(200))`);
       </div>
     </NotebookContext.Provider>
   );
-};
+}
