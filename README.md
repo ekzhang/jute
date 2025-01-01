@@ -137,7 +137,3 @@ JUPYTER_DATA_DIR=~/path/to/jute/experiment/.venv/share/jupyter/ PYTHON_PATH=~/pa
 
 - [Eric Zhang](https://www.ekzhang.com/)
   ([@ekzhang1](https://twitter.com/ekzhang1))
-
-```
-
-```
