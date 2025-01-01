@@ -3,8 +3,9 @@
 Jute is a native notebook for interactive computing.
 
 Double-click to open any Jupyter notebook in a beautiful, streamlined desktop
-app. Run code in 40 languages both locally, and on powerful cloud kernels (with
-GPUs). Collaborate with real-time multiplayer.
+app. Run code in 40 languages, either locally or on powerful cloud kernels (with
+GPUs). Enable reactivity for selected cells to spend up exploration. Collaborate
+effortlessly with real-time multiplayer.
 
 <p align="center">
   <img src="https://i.imgur.com/xYQeE3d.png" width="600">
