@@ -1,11 +1,12 @@
 //! Library code for the Jute application.
 
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 #![warn(missing_docs)]
 
 use std::io;
 
 pub mod backend;
+pub mod plugins;
 pub mod state;
 
 /// A serializable error type for application errors.

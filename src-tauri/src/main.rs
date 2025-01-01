@@ -6,6 +6,7 @@ use jute::{
         commands::{self, RunCellEvent},
         local::{environment, LocalKernel},
     },
+    plugins,
     state::State,
     Error,
 };
@@ -94,8 +95,14 @@ async fn run_cell(
 fn main() {
     tracing_subscriber::fmt().init();
 
-    tauri::Builder::default()
-        .manage(State::new())
+    let mut app = tauri::Builder::default();
+
+    #[cfg(target_os = "macos")]
+    {
+        app = app.plugin(plugins::macos_traffic_lights::init());
+    }
+
+    app.manage(State::new())
         .invoke_handler(tauri::generate_handler![
             cpu_usage,
             start_kernel,
