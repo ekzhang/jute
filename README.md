@@ -3,16 +3,19 @@
 Jute is a native notebook for interactive computing.
 
 Double-click to open any Jupyter notebook in a beautiful, streamlined desktop
-app. Run code in 40 languages on powerful remote kernels, and collaborate with
-real-time multiplayer.
+app. Run code in 40 languages both locally, and on powerful cloud kernels (with
+GPUs). Collaborate with real-time multiplayer.
+
+Jute is also designed to integrate modern features: code completion, semantic
+highlighting, simple standalone kernels, automatic formatting, and AI.
 
 (This is a complete rewrite of the Jupyter frontend for speed, simplicity, and
 usability.)
 
 > [!IMPORTANT]
 >
-> Nothing here is actually implemented yet; I just feel the need to write down
-> and continuously evolve an aspiration of where I'm going.
+> Jute is not usable or fully implemented yet; I just feel the need to write
+> down and continuously evolve an aspiration of where I'm going.
 
 ## Why?
 
