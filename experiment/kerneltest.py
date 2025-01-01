@@ -1,3 +1,4 @@
+import os
 import datetime
 import hashlib
 import hmac
@@ -12,7 +13,12 @@ from typing import Any
 
 import zmq
 
-kernel_dir = Path("/usr/local/share/jupyter/kernels/python3")
+kernel_dir = os.getenv("KERNEL_DIR")
+if not kernel_dir:
+    kernel_dir = Path("/usr/local/share/jupyter/kernels/python3")
+else:
+    kernel_dir = Path(kernel_dir)
+
 kernel_json = json.loads((kernel_dir / "kernel.json").read_text())
 
 print(f'Starting kernel "{kernel_json["display_name"]}" ...')
@@ -79,8 +85,8 @@ def encode_msg(message_type: str, content: dict[str, Any]):
     }
     msg_list: list[bytes] = [
         json.dumps(header).encode(),
-        json.dumps(None).encode(),  # parent_header
-        json.dumps(None).encode(),  # metadata
+        json.dumps({}).encode(),  # parent_header
+        json.dumps({}).encode(),  # metadata
         json.dumps(content).encode(),
     ]
     mac = hmac.new(digest_key.encode(), digestmod=hashlib.sha256)
