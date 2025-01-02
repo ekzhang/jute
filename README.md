@@ -103,6 +103,13 @@ effort of the Jupyter Project.
 
 ## Development
 
+First, download external sidecar binaries. These do not come with the
+repository.
+
+```sh
+python3 src-tauri/binaries/download.py
+```
+
 To run Jute locally, you must supply it with access to a Jupyter kernel.
 Currently, this is done by supplying environment variables to tell Jute where to
 find a Python executable and a
@@ -130,7 +137,7 @@ If you've installed Jupyter into the `experiment/` directory as described above,
 you can start Jute with:
 
 ```sh
-JUPYTER_DATA_DIR=~/path/to/jute/experiment/.venv/share/jupyter/ PYTHON_PATH=~/path/to/jute/experiment/.venv/bin/python npm run tauri dev
+JUPYTER_DATA_DIR=~/path/to/jute/experiment/.venv/share/jupyter/ PYTHON_PATH=~/path/to/jute/experiment/.venv/bin/python npx tauri dev
 ```
 
 ## Author

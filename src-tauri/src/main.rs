@@ -109,6 +109,7 @@ fn main() {
     }
 
     app.manage(State::new())
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             cpu_usage,
             start_kernel,
