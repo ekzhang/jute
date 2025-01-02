@@ -77,16 +77,18 @@ def download_uv(target: str, version: str = UV_VERSION) -> None:
     if "windows" in target:
         url += f"{version}/uv-{target}.zip"
         archive_paths = ["uv.exe", "uvx.exe"]
+        suffix = ".exe"
     else:
         url += f"{version}/uv-{target}.tar.gz"
         archive_paths = [f"uv-{target}/uv", f"uv-{target}/uvx"]
+        suffix = ""
 
     with urllib.request.urlopen(url) as resp:
         archive_data = resp.read()
 
     uv_binary, _uvx_binary = read_archive(url, BytesIO(archive_data), archive_paths)
-    Path(f"uv-{target}").write_bytes(uv_binary)
-    display_file(f"uv-{target}")
+    Path(f"uv-{target}{suffix}").write_bytes(uv_binary)
+    display_file(f"uv-{target}{suffix}")
 
 
 def main() -> None:
