@@ -19,6 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - run: python3 src-tauri/binaries/download.py
+
       - name: Tauri dependencies
         if: startsWith(matrix.os, 'ubuntu')
         run: |
