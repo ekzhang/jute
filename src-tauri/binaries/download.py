@@ -29,7 +29,8 @@ TARGET_TRIPLES = [
     "x86_64-pc-windows-msvc",  # Windows 64-bit
     "aarch64-unknown-linux-musl",  # Linux ARM64 (musl)
     "x86_64-unknown-linux-musl",  # Linux x86_64 (musl)
-    "i686-unknown-linux-musl",  # Linux x86 (musl)
+    "aarch64-unknown-linux-gnu",  # Linux ARM64 (gnu)
+    "x86_64-unknown-linux-gnu",  # Linux x86_64 (gnu)
 ]
 
 
