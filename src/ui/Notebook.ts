@@ -131,10 +131,11 @@ export class Notebook {
     try {
       const onEvent = new Channel<RunCellEvent>();
       let output = "";
+      let status: NotebookOutput["status"] = "success";
       let displays: Record<string, any> = {};
       const update = () =>
         this.state.setOutput(cellId, {
-          status: "success",
+          status,
           output,
           displays,
         });
@@ -143,6 +144,10 @@ export class Notebook {
       onEvent.onmessage = (message: RunCellEvent) => {
         if (message.event === "stdout" || message.event === "stderr") {
           output += message.data;
+          update();
+        } else if (message.event === "error") {
+          status = "error";
+          output += `${message.data.ename}: ${message.data.evalue}\n`;
           update();
         } else if (message.event === "execute_result") {
           // This means that there was a return value for the cell.
@@ -182,7 +187,7 @@ export class Notebook {
       };
 
       await invoke("run_cell", { kernelId: this.kernelId, code, onEvent });
-      this.state.setOutput(cellId, { status: "success", output, displays });
+      this.state.setOutput(cellId, { status, output, displays });
     } catch (error: any) {
       this.state.setOutput(cellId, {
         status: "error",
