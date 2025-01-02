@@ -9,8 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint .",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "format": "prettier --ignore-path .gitignore --write .",
+    "format:check": "prettier --ignore-path .gitignore --check ."
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.4",
