@@ -47,6 +47,14 @@ jobs:
       - run: cargo test --all-targets
         working-directory: ./src-tauri
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.18.0"
+
+      - run: npm ci
+
+      - run: npx tauri build
+
   format:
     name: Format
     runs-on: ubuntu-22.04
