@@ -131,7 +131,7 @@ export class Notebook {
     try {
       const onEvent = new Channel<RunCellEvent>();
       let output = "";
-      let status: NotebookOutput['status'] = "success";
+      let status: NotebookOutput["status"] = "success";
       let displays: Record<string, any> = {};
       const update = () =>
         this.state.setOutput(cellId, {
