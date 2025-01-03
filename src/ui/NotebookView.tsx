@@ -26,13 +26,7 @@ plt.plot(np.random.randn(200))`);
 
   return (
     <NotebookContext.Provider value={notebook}>
-      <div className="grid h-full grid-cols-[1fr,200px] overflow-y-auto">
-        <NotebookCells />
-        <div
-          className="border-l border-gray-200 bg-gray-100"
-          data-tauri-drag-region
-        />
-      </div>
+      <NotebookCells />
     </NotebookContext.Provider>
   );
 }

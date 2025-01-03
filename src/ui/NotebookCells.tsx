@@ -1,54 +1,36 @@
-import { CircleIcon, CornerDownRightIcon, PlusIcon } from "lucide-react";
-import { Suspense, lazy } from "react";
+import { PlusIcon } from "lucide-react";
 import { useStore } from "zustand";
 
-import CellInputFallback from "./CellInputFallback";
 import { useNotebook } from "./Notebook";
-import OutputView from "./OutputView";
-
-const CellInput = lazy(() => import("./CellInput"));
+import NotebookCell from "./NotebookCell";
 
 export default function NotebookCells() {
   const notebook = useNotebook();
   const cellIds = useStore(notebook.store, (state) => state.cellIds);
-  const cells = useStore(notebook.store, (state) => state.cells);
 
   return (
-    <div className="py-16">
-      {cellIds.map((id) => (
-        <div key={id}>
-          <div className="flex items-start gap-2 px-4">
-            <CircleIcon className="my-[6px] h-3.5 w-3.5 fill-gray-200 stroke-none" />
-            <div className="flex-1">
-              <Suspense fallback={<CellInputFallback cellId={id} />}>
-                <CellInput cellId={id} />
-              </Suspense>
-            </div>
-          </div>
-          {cells[id]?.output && (
-            <div className="flex gap-3 px-4 pt-4">
-              <div>
-                <CornerDownRightIcon className="ml-1 h-5 w-5 text-green-700" />
-              </div>
-              <div className="pt-0.5">
-                <OutputView value={cells[id].output} />
-              </div>
-            </div>
-          )}
-          <hr className="mx-2 my-4 border-gray-200" />
-        </div>
-      ))}
+    <div className="overflow-y-auto h-full flex flex-col">
+      <div className="flex">
+        <div className="h-16 flex-1" />
+        <div className="border-l border-gray-200 bg-gray-100 w-[200px]" />
+      </div>
 
-      <div className="mx-2 my-4">
-        <button
-          className="flex w-full items-center justify-center gap-1.5 rounded border border-gray-200 p-2 transition-colors hover:border-gray-300 hover:bg-gray-50"
-          onClick={() => {
-            notebook.addCell("");
-          }}
-        >
-          <PlusIcon size={18} />
-          <span>New cell</span>
-        </button>
+      {cellIds.map((id) => <NotebookCell key={id} id={id} />)}
+
+      <div className="flex flex-1">
+        <div className="mx-2 my-4 flex-1">
+          <button
+            className="flex w-full items-center justify-center gap-1.5 rounded border border-gray-200 p-2 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+            onClick={() => {
+              notebook.addCell("");
+            }}
+          >
+            <PlusIcon size={18} />
+            <span>New cell</span>
+          </button>
+        </div>
+
+        <div className="border-l border-gray-200 bg-gray-100 py-auto w-[200px]" />
       </div>
     </div>
   );
