@@ -126,7 +126,7 @@ uv sync # this will create a venv at experiment/.venv and install jupyter into i
 After you have a Jupyter kernel available, you can start Jute with:
 
 ```sh
-JUPYTER_DATA_DIR=... PYTHON_PATH=... npm run tauri dev
+JUPYTER_DATA_DIR=... PYTHON_PATH=... npx tauri dev
 ```
 
 Note that if you've installed Jupyter outside of a virtual environment, you
