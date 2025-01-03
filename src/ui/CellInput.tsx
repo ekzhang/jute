@@ -28,6 +28,7 @@ import {
   dropCursor,
   highlightSpecialChars,
   keymap,
+  lineNumbers,
   rectangularSelection,
 } from "@codemirror/view";
 import { useEffect, useRef } from "react";
@@ -51,6 +52,24 @@ const editorTheme = EditorView.theme({
   "& .cm-scroller": {
     fontFamily: "Fira Code Variable, ui-monospace, monospace",
     fontVariantLigatures: "none",
+  },
+  "& .cm-content": {
+    paddingBlock: "16px",
+    flexShrink: "0",
+  },
+  "& .cm-line": {
+    paddingLeft: "0",
+    paddingRight: "16px",
+  },
+  "& .cm-gutters": {
+    borderRight: "none",
+    background: "white",
+    color: "#b1b1b1",
+    cursor: "default",
+  },
+  "& .cm-lineNumbers .cm-gutterElement": {
+    minWidth: "57px",
+    paddingRight: "18px",
   },
 });
 
@@ -82,6 +101,8 @@ export default function CellInput({ cellId }: Props) {
         autocompletion(),
         rectangularSelection(),
         crosshairCursor(),
+        // TODO: Figure out state dataflow for cumulative line numbers.
+        lineNumbers({ formatNumber: (x) => String(x + 0) }),
         keymap.of([
           ...closeBracketsKeymap,
           ...defaultKeymap,

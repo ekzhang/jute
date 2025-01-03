@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 
 import { Notebook, NotebookContext } from "./Notebook";
 import NotebookCells from "./NotebookCells";
+import NotebookLocation from "./NotebookLocation";
 
 export default function NotebookView() {
   // Single mutable object that is shared between all parts of the notebook.
@@ -27,7 +28,13 @@ plt.plot(np.random.randn(200))`);
   return (
     <NotebookContext.Provider value={notebook}>
       <div className="grid h-full grid-cols-[1fr,200px] overflow-y-auto">
-        <NotebookCells />
+        <div className="min-w-0 py-16">
+          <NotebookLocation
+            directory="/Users/ezhang/Resesarch/Jute/designs"
+            filename="Experiments Dec 31.ipynb"
+          />
+          <NotebookCells />
+        </div>
         <div
           className="border-l border-gray-200 bg-gray-100"
           data-tauri-drag-region

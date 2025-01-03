@@ -30,7 +30,7 @@
     },
     "windows": [
       {
-        "width": 800,
+        "width": 960,
         "height": 800,
         "fullscreen": false,
         "resizable": true,

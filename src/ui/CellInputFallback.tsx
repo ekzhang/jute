@@ -14,9 +14,10 @@ export default function CellInput({ cellId }: Props) {
     (state) => state.cells[cellId].initialText,
   );
 
+  // 57px padding left matches the gutter size of the full editor.
   return (
     <pre
-      className="py-1 pl-1.5 pr-0.5 text-sm leading-[1.2rem]"
+      className="max-w-full overflow-hidden py-4 pl-[57px] pr-0.5 text-sm leading-[1.2rem]"
       style={{
         fontFamily: "Fira Code Variable, ui-monospace, monospace",
         fontVariantLigatures: "none",

@@ -22,28 +22,28 @@ export default function NotebookHeader({ kernelName }: Props) {
 
         {/* Centered UI components: kernel controls and stats. */}
         <div className="flex items-center">
-          <button className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-black">
+          <button className="rounded p-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-black active:scale-110">
             <PlayIcon size={16} />
           </button>
-          <button className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-black">
+          <button className="rounded p-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-black active:scale-110">
             <RefreshCwIcon size={16} />
           </button>
 
-          <button className="mx-2 w-60 rounded border border-gray-200 py-[3px] text-xs text-gray-900">
+          <button className="mx-2 w-60 rounded border border-gray-200 py-[3px] text-xs text-gray-900 transition-all hover:border-gray-400 hover:bg-gray-100 active:scale-105">
             {kernelName}
           </button>
 
-          <button className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-black">
+          <button className="rounded p-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-black active:scale-110">
             <ChartLineIcon size={16} />
           </button>
         </div>
 
         {/* Top-right UI components: settings and open notebooks. */}
         <div className="flex items-center">
-          <button className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-black">
+          <button className="rounded p-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-black active:scale-110">
             <SettingsIcon size={20} strokeWidth={1.5} />
           </button>
-          <button className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-black">
+          <button className="rounded p-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-black active:scale-110">
             <PlusIcon size={20} strokeWidth={1.5} />
           </button>
         </div>

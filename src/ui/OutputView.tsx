@@ -11,7 +11,7 @@ export default function OutputView({ value }: Props) {
     return null;
   }
   return (
-    <div>
+    <div className="px-8 pb-6 pt-4 after:contents">
       <pre
         className={clsx(
           value.status === "error" && "text-red-500",

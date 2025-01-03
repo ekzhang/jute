@@ -58,7 +58,7 @@ export type NotebookOutput = {
 /** Actions are kept private, only to be used from the `Notebook` class. */
 type NotebookStoreActions = {
   addCell: (id: string, initialText: string) => void;
-  setOutput: (cellId: string, output: NotebookOutput) => void;
+  setOutput: (cellId: string, output: NotebookOutput | undefined) => void;
 };
 
 type CellHandle = {
@@ -116,6 +116,10 @@ export class Notebook {
     this.refs.set(cellId, {});
     this.store.getState().addCell(cellId, initialText);
     return cellId;
+  }
+
+  clearOutput(cellId: string) {
+    this.state.setOutput(cellId, undefined);
   }
 
   async execute(cellId: string) {

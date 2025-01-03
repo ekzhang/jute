@@ -1,5 +1,12 @@
-import { CircleIcon, CornerDownRightIcon, PlusIcon } from "lucide-react";
-import { Suspense, lazy } from "react";
+import {
+  BoltIcon,
+  Code2Icon,
+  LucideIcon,
+  PlusIcon,
+  RouteOffIcon,
+  XSquareIcon,
+} from "lucide-react";
+import { ReactNode, Suspense, lazy } from "react";
 import { useStore } from "zustand";
 
 import CellInputFallback from "./CellInputFallback";
@@ -8,34 +15,70 @@ import OutputView from "./OutputView";
 
 const CellInput = lazy(() => import("./CellInput"));
 
+const Aside = ({ children }: { children: ReactNode }) => (
+  <aside className="absolute right-[-200px] w-[200px] px-2">{children}</aside>
+);
+
+const AsideIconButton = ({
+  Icon,
+  onClick,
+}: {
+  Icon: LucideIcon;
+  onClick?: () => void;
+}) => {
+  return (
+    <button
+      className="rounded p-1 text-gray-500 transition-all hover:bg-gray-200 hover:text-black active:scale-110"
+      onClick={onClick}
+    >
+      <Icon size={16} />
+    </button>
+  );
+};
+
 export default function NotebookCells() {
   const notebook = useNotebook();
   const cellIds = useStore(notebook.store, (state) => state.cellIds);
   const cells = useStore(notebook.store, (state) => state.cells);
 
   return (
-    <div className="py-16">
+    <div className="relative py-8">
       {cellIds.map((id) => (
         <div key={id}>
-          <div className="flex items-start gap-2 px-4">
-            <CircleIcon className="my-[6px] h-3.5 w-3.5 fill-gray-200 stroke-none" />
-            <div className="flex-1">
-              <Suspense fallback={<CellInputFallback cellId={id} />}>
-                <CellInput cellId={id} />
-              </Suspense>
+          <hr className="border-gray-200" />
+
+          <Aside>
+            <div className="mt-1 flex gap-0.5">
+              <AsideIconButton Icon={Code2Icon} />
+              <AsideIconButton Icon={RouteOffIcon} />
+              <AsideIconButton Icon={BoltIcon} />
             </div>
-          </div>
+          </Aside>
+
+          <Suspense fallback={<CellInputFallback cellId={id} />}>
+            <CellInput cellId={id} />
+          </Suspense>
+
           {cells[id]?.output && (
-            <div className="flex gap-3 px-4 pt-4">
-              <div>
-                <CornerDownRightIcon className="ml-1 h-5 w-5 text-green-700" />
-              </div>
-              <div className="pt-0.5">
+            <>
+              <hr className="border-gray-200" />
+              <Aside>
+                <div className="mt-1 flex gap-0.5">
+                  <AsideIconButton
+                    Icon={XSquareIcon}
+                    onClick={() => notebook.clearOutput(id)}
+                  />
+                  <AsideIconButton Icon={BoltIcon} />
+                </div>
+              </Aside>
+              <div className="max-h-[560px] overflow-y-auto">
+                {/* TODO: Move this icon into the output view itself. Also it should only be displayed
+                  when the cell has a return value, and next to the return value. */}
+                {/* <CornerDownRightIcon size={16} className="text-gray-400" /> */}
                 <OutputView value={cells[id].output} />
               </div>
-            </div>
+            </>
           )}
-          <hr className="mx-2 my-4 border-gray-200" />
         </div>
       ))}
 
