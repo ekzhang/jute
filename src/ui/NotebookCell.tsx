@@ -24,7 +24,7 @@ export default function NotebookCell({ id }: Props) {
     <div className="flex">
       <div className="flex-1">
         <div className="flex items-start gap-2 px-4">
-          <CircleIcon className="mt-1.5 size-3.5 fill-zinc-200 stroke-none" />
+          <CircleIcon className="mt-1.5 size-3.5 fill-gray-200 stroke-none" />
           <div className="flex-1">
             <Suspense fallback={<CellInputFallback cellId={id} />}>
               <CellInput cellId={id} />
@@ -35,7 +35,7 @@ export default function NotebookCell({ id }: Props) {
         {cell?.output && (
           <div className="flex gap-3 px-4 pt-4">
             <div>
-              <CornerDownRightIcon className="ml-1 size-5 text-slate-500" />
+              <CornerDownRightIcon className="ml-1 size-5 text-gray-500" />
             </div>
             <div className="pt-0.5">
               <OutputView value={cell.output} />
@@ -43,10 +43,10 @@ export default function NotebookCell({ id }: Props) {
           </div>
         )}
 
-        <hr className="mx-2 my-4 border-zinc-200" />
+        <hr className="mx-2 my-4 border-gray-200" />
       </div>
 
-      <div className="w-[200px] border-l border-zinc-200 bg-zinc-100 px-4 text-sm">
+      <div className="w-[200px] border-l border-gray-200 bg-gray-100 px-4 text-sm">
         {cell.output && (
           <div className="flex items-center gap-1">
             {cell.output.status === "success" ? (
@@ -55,7 +55,7 @@ export default function NotebookCell({ id }: Props) {
               <X className="size-4 text-red-700" />
             )}
 
-            <div className="font-extralight text-slate-500">
+            <div className="font-extralight text-gray-500">
               {Math.round(cell.output.durationMs || 0)} ms
             </div>
           </div>
