@@ -1,13 +1,13 @@
+import NotebookFooter from "./NotebookFooter";
+import NotebookHeader from "./NotebookHeader";
 import NotebookView from "./NotebookView";
-import TitleBar from "./TitleBar";
 
 export default function App() {
-  const title = "sediment_analysis.ipynb";
-
   return (
     <main className="absolute inset-0 bg-white">
-      <TitleBar title={title} />
+      <NotebookHeader kernelName="Local Kernel (Python 3.11.7)" />
       <NotebookView />
+      <NotebookFooter />
     </main>
   );
 }

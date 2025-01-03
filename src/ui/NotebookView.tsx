@@ -29,7 +29,7 @@ plt.plot(np.random.randn(200))`);
       <div className="grid h-full grid-cols-[1fr,200px] overflow-y-auto">
         <NotebookCells />
         <div
-          className="border-l border-zinc-200 bg-zinc-100"
+          className="border-l border-gray-200 bg-gray-100"
           data-tauri-drag-region
         />
       </div>
