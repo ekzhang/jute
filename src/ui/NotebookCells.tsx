@@ -5,6 +5,7 @@ import {
   LucideIcon,
   PlusIcon,
   RouteOffIcon,
+  XIcon,
   XSquareIcon,
 } from "lucide-react";
 import { ReactNode, Suspense, lazy } from "react";
@@ -37,9 +38,9 @@ const AsideIconButton = ({
 
 function CellInputAside({ cellId }: { cellId: string }) {
   const notebook = useNotebook();
-  const timings = useStore(
+  const output = useStore(
     notebook.store,
-    (state) => state.cells[cellId].output?.timings,
+    (state) => state.cells[cellId].output,
   );
 
   // TODO: Real-time clock indicator here.
@@ -50,11 +51,15 @@ function CellInputAside({ cellId }: { cellId: string }) {
         <AsideIconButton Icon={RouteOffIcon} />
         <AsideIconButton Icon={BoltIcon} />
       </div>
-      {timings?.finishedAt && (
+      {output?.timings?.finishedAt && (
         <div className="mt-0.5 flex items-center">
-          <CheckIcon size={16} className="mr-1 text-green-500" />
+          {output.status === "success" ? (
+            <CheckIcon size={16} className="mr-1 text-green-500" />
+          ) : (
+            <XIcon size={16} className="mr-1 text-red-500" />
+          )}
           <p className="text-sm text-gray-400">
-            {timings.finishedAt - timings.startedAt} ms
+            {output?.timings.finishedAt - output?.timings.startedAt} ms
           </p>
         </div>
       )}
