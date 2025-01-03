@@ -10,7 +10,7 @@ const CellInput = lazy(() => import("./CellInput"));
 
 type Props = {
   id: string;
-}
+};
 
 export default function NotebookCell({ id }: Props) {
   const notebook = useNotebook();
@@ -46,20 +46,21 @@ export default function NotebookCell({ id }: Props) {
         <hr className="mx-2 my-4 border-zinc-200" />
       </div>
 
-      <div className="border-l border-zinc-200 bg-zinc-100 w-[200px] px-4 text-sm">
+      <div className="w-[200px] border-l border-zinc-200 bg-zinc-100 px-4 text-sm">
         {cell.output && (
-          <div className="flex gap-1 items-center">
-            {cell.output.status === 'success' ? (
+          <div className="flex items-center gap-1">
+            {cell.output.status === "success" ? (
               <Check className="size-4 text-green-700" />
             ) : (
               <X className="size-4 text-red-700" />
             )}
 
-            <div className="text-slate-500 font-extralight">{Math.round(cell.output.durationMs || 0)} ms</div>
+            <div className="font-extralight text-slate-500">
+              {Math.round(cell.output.durationMs || 0)} ms
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 }
-

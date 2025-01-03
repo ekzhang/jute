@@ -10,31 +10,31 @@ type RunCellEvent =
   | { event: "stdout"; data: string }
   | { event: "stderr"; data: string }
   | {
-    event: "execute_result";
-    data: {
-      execution_count: number;
-      data: Record<string, any>;
-      metadata: Record<string, any>;
-    };
-  }
+      event: "execute_result";
+      data: {
+        execution_count: number;
+        data: Record<string, any>;
+        metadata: Record<string, any>;
+      };
+    }
   | {
-    event: "display_data" | "update_display_data";
-    data: {
-      data: Record<string, any>;
-      metadata: Record<string, any>;
-      transient: {
-        display_id: string | null;
-      } | null;
-    };
-  }
+      event: "display_data" | "update_display_data";
+      data: {
+        data: Record<string, any>;
+        metadata: Record<string, any>;
+        transient: {
+          display_id: string | null;
+        } | null;
+      };
+    }
   | {
-    event: "error";
-    data: {
-      ename: string;
-      evalue: string;
-      traceback: string[];
-    };
-  }
+      event: "error";
+      data: {
+        ename: string;
+        evalue: string;
+        traceback: string[];
+      };
+    }
   | { event: "disconnect"; data: string };
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
@@ -189,7 +189,12 @@ export class Notebook {
       };
 
       await invoke("run_cell", { kernelId: this.kernelId, code, onEvent });
-      this.state.setOutput(cellId, { status, output, displays, durationMs: performance.now() - startTime });
+      this.state.setOutput(cellId, {
+        status,
+        output,
+        displays,
+        durationMs: performance.now() - startTime,
+      });
     } catch (error: any) {
       this.state.setOutput(cellId, {
         status: "error",
