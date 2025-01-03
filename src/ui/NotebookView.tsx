@@ -22,7 +22,7 @@ export default function NotebookView() {
     notebook.addCell(`import matplotlib.pyplot as plt
 import numpy as np
 
-plt.plot(np.random.randn(200))`);
+plt.plot(np.random.normal(size=(400,)).cumsum())`);
   }, [notebook]);
 
   return (
