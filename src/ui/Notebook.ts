@@ -52,6 +52,10 @@ export type NotebookStoreState = {
 export type NotebookOutput = {
   status: "success" | "error";
   output: string;
+  timings: {
+    startedAt: number;
+    finishedAt?: number;
+  };
   displays: { [displayId: string]: string };
 };
 
@@ -132,18 +136,23 @@ export class Notebook {
       throw new Error(`Cell ${cellId} not found`);
     }
     const code = editor.state.doc.toString();
+
+    let status: NotebookOutput["status"] = "success";
+    let output = "";
+    let timings: NotebookOutput["timings"] = { startedAt: Date.now() };
+    let displays: Record<string, any> = {};
+
+    const update = () =>
+      this.state.setOutput(cellId, {
+        status,
+        output,
+        timings,
+        displays,
+      });
+    update();
+
     try {
       const onEvent = new Channel<RunCellEvent>();
-      let output = "";
-      let status: NotebookOutput["status"] = "success";
-      let displays: Record<string, any> = {};
-      const update = () =>
-        this.state.setOutput(cellId, {
-          status,
-          output,
-          displays,
-        });
-      update();
 
       onEvent.onmessage = (message: RunCellEvent) => {
         if (message.event === "stdout" || message.event === "stderr") {
@@ -191,13 +200,13 @@ export class Notebook {
       };
 
       await invoke("run_cell", { kernelId: this.kernelId, code, onEvent });
-      this.state.setOutput(cellId, { status, output, displays });
     } catch (error: any) {
-      this.state.setOutput(cellId, {
-        status: "error",
-        output: error,
-        displays: {},
-      });
+      // TODO: Render backtraces properly here, and do not prune existing output.
+      status = "error";
+      output += error.toString();
+    } finally {
+      timings = { ...timings, finishedAt: Date.now() };
+      update();
     }
   }
 }

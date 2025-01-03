@@ -1,5 +1,6 @@
 import {
   BoltIcon,
+  CheckIcon,
   Code2Icon,
   LucideIcon,
   PlusIcon,
@@ -25,16 +26,41 @@ const AsideIconButton = ({
 }: {
   Icon: LucideIcon;
   onClick?: () => void;
-}) => {
-  return (
-    <button
-      className="rounded p-1 text-gray-500 transition-all hover:bg-gray-200 hover:text-black active:scale-110"
-      onClick={onClick}
-    >
-      <Icon size={16} />
-    </button>
+}) => (
+  <button
+    className="rounded p-1 text-gray-500 transition-all hover:bg-gray-200 hover:text-black active:scale-110"
+    onClick={onClick}
+  >
+    <Icon size={16} />
+  </button>
+);
+
+function CellInputAside({ cellId }: { cellId: string }) {
+  const notebook = useNotebook();
+  const timings = useStore(
+    notebook.store,
+    (state) => state.cells[cellId].output?.timings,
   );
-};
+
+  // TODO: Real-time clock indicator here.
+  return (
+    <Aside>
+      <div className="mt-1 flex gap-0.5">
+        <AsideIconButton Icon={Code2Icon} />
+        <AsideIconButton Icon={RouteOffIcon} />
+        <AsideIconButton Icon={BoltIcon} />
+      </div>
+      {timings?.finishedAt && (
+        <div className="mt-0.5 flex items-center">
+          <CheckIcon size={16} className="mr-1 text-green-500" />
+          <p className="text-sm text-gray-400">
+            {timings.finishedAt - timings.startedAt} ms
+          </p>
+        </div>
+      )}
+    </Aside>
+  );
+}
 
 export default function NotebookCells() {
   const notebook = useNotebook();
@@ -47,14 +73,7 @@ export default function NotebookCells() {
         <div key={id}>
           <hr className="border-gray-200" />
 
-          <Aside>
-            <div className="mt-1 flex gap-0.5">
-              <AsideIconButton Icon={Code2Icon} />
-              <AsideIconButton Icon={RouteOffIcon} />
-              <AsideIconButton Icon={BoltIcon} />
-            </div>
-          </Aside>
-
+          <CellInputAside cellId={id} />
           <Suspense fallback={<CellInputFallback cellId={id} />}>
             <CellInput cellId={id} />
           </Suspense>
