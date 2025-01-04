@@ -34,8 +34,8 @@ import {
 import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
 
+import { useNotebook } from "../../hooks/notebook";
 import CellInputFallback from "./CellInputFallback";
-import { useNotebook } from "./Notebook";
 
 type Props = {
   /** A globally unique identifier for the editor. */

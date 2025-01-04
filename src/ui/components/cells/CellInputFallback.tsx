@@ -1,6 +1,6 @@
 import { useStore } from "zustand";
 
-import { useNotebook } from "./Notebook";
+import { useNotebook } from "../../hooks/notebook";
 
 type Props = {
   cellId: string;
