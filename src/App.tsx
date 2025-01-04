@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { Route, Router, Switch } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 
-import Home from "~/pages/Home";
-import Notebook from "~/pages/Notebook";
+import HomePage from "@/pages/HomePage";
+import NotebookPage from "@/pages/NotebookPage";
 
 type Props = {
   openedFile?: string;
@@ -20,18 +20,11 @@ export default function App({ openedFile }: Props) {
   });
 
   return (
-    <main className="absolute inset-0 bg-white">
-      <Router hook={useHashLocation}>
-        <Switch>
-          <Route path="/">
-            <Home />
-          </Route>
-
-          <Route path="/notebook/:encodedPath">
-            <Notebook />
-          </Route>
-        </Switch>
-      </Router>
-    </main>
+    <Router hook={useHashLocation}>
+      <Switch>
+        <Route path="/" component={HomePage} />
+        <Route path="/notebook/:encodedPath" component={NotebookPage} />
+      </Switch>
+    </Router>
   );
 }

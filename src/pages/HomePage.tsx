@@ -6,7 +6,7 @@ const sampleNotebookNames = [
   "~/Machine_learning.ipynb",
 ];
 
-export default function Home() {
+export default function HomePage() {
   return (
     <div className="mt-20 flex flex-col gap-4 px-8 font-light">
       <h1 className="mt-2 text-5xl">Welcome to Jute</h1>

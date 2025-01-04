@@ -1,19 +1,17 @@
 import { useEffect, useMemo } from "react";
-import { useParams } from "wouter";
 
-import { Notebook, NotebookContext } from "~/hooks/notebook";
+import { Notebook, NotebookContext } from "@/stores/notebook";
 
 import NotebookCells from "./NotebookCells";
 import NotebookLocation from "./NotebookLocation";
 
-export default function NotebookView() {
-  const { encodedPath } = useParams();
+type Props = {
+  path: string;
+};
 
+export default function NotebookView({ path }: Props) {
   // Single mutable object that is shared between all parts of the notebook.
-  const notebook = useMemo(
-    () => new Notebook(decodeURIComponent(encodedPath || "")),
-    [encodedPath],
-  );
+  const notebook = useMemo(() => new Notebook(path), [path]);
 
   useEffect(() => {
     notebook.addCell(`print("Hello, world!")`);

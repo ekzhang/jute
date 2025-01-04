@@ -11,11 +11,12 @@ import {
 import { ReactNode, Suspense, lazy } from "react";
 import { useStore } from "zustand";
 
-import CellInputFallback from "~/components/cells/CellInputFallback";
-import OutputView from "~/components/cells/OutputView";
-import { useNotebook } from "~/hooks/notebook";
+import { useNotebook } from "@/stores/notebook";
 
-const CellInput = lazy(() => import("../cells/CellInput"));
+import CellInputFallback from "./CellInputFallback";
+import OutputView from "./OutputView";
+
+const CellInput = lazy(() => import("./CellInput"));
 
 const Aside = ({ children }: { children: ReactNode }) => (
   <aside className="absolute right-[-200px] w-[200px] px-2">{children}</aside>

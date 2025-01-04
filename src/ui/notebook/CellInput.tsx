@@ -34,7 +34,7 @@ import {
 import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
 
-import { useNotebook } from "~/hooks/notebook";
+import { useNotebook } from "@/stores/notebook";
 
 import CellInputFallback from "./CellInputFallback";
 

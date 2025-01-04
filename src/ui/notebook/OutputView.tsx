@@ -1,6 +1,6 @@
 import clsx from "clsx";
 
-import { NotebookOutput } from "~/hooks/notebook";
+import { NotebookOutput } from "@/stores/notebook";
 
 type Props = {
   value: NotebookOutput | undefined;

@@ -61,7 +61,7 @@
     ],
     "proseWrap": "always",
     "importOrder": [
-      "~/",
+      "@/",
       "^[./]"
     ],
     "importOrderSeparation": true,
