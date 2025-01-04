@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { ReactNode, Suspense, lazy } from "react";
 import { useStore } from "zustand";
+
 import CellInputFallback from "~/components/cells/CellInputFallback";
 import OutputView from "~/components/cells/OutputView";
 import { useNotebook } from "~/hooks/notebook";
