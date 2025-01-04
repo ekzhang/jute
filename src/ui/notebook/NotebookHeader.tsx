@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import {
   ChartLineIcon,
   HomeIcon,
@@ -7,12 +8,19 @@ import {
   SettingsIcon,
 } from "lucide-react";
 import { Link } from "wouter";
+import { useStore } from "zustand";
+
+import { useNotebook } from "@/stores/notebook";
 
 type Props = {
   kernelName: string;
 };
 
 export default function NotebookHeader({ kernelName }: Props) {
+  const notebook = useNotebook();
+
+  const kernelId = useStore(notebook.store, (state) => state.kernelId);
+
   return (
     <div className="absolute inset-x-0 h-16 bg-gradient-to-b from-white/85 from-40% to-white/0">
       <header
@@ -31,7 +39,13 @@ export default function NotebookHeader({ kernelName }: Props) {
             <RefreshCwIcon size={16} />
           </button>
 
-          <button className="mx-2 w-60 rounded border border-gray-200 py-[3px] text-xs text-gray-900 transition-all hover:border-gray-400 hover:bg-gray-100 active:scale-105">
+          <button className="mx-2 flex w-60 items-center justify-center rounded border border-gray-200 py-[3px] text-xs text-gray-900 transition-all hover:border-gray-400 hover:bg-gray-100 active:scale-105">
+            <div
+              className={clsx(
+                "mr-2 h-2 w-2 rounded-full",
+                kernelId ? "bg-green-500" : "bg-orange-500",
+              )}
+            />
             {kernelName}
           </button>
 

@@ -47,6 +47,9 @@ export type NotebookStoreState = {
       output?: NotebookOutput;
     };
   };
+
+  /** ID of the running kernel, populated after the kernel is started. */
+  kernelId?: string;
 };
 
 export type NotebookOutput = {
@@ -70,9 +73,6 @@ type CellHandle = {
 };
 
 export class Notebook {
-  /** ID of the running kernel, populated after the kernel is started. */
-  kernelId: string;
-
   /** Promise that resolves when the kernel is started. */
   kernelStartPromise: Promise<void>;
 
@@ -99,13 +99,9 @@ export class Notebook {
     this.filename = parts.pop()!;
     this.directory = parts.join("/");
 
-    this.kernelId = "";
-    this.kernelStartPromise = (async () => {
-      this.kernelId = await invoke("start_kernel", { specName: "python3" });
-    })();
-
     this.store = createStore<NotebookStore>()(
       immer<NotebookStore>((set) => ({
+        kernelId: undefined,
         cellIds: [],
         cells: {},
 
@@ -123,12 +119,26 @@ export class Notebook {
           }),
       })),
     );
+
     this.refs = new Map();
+
+    this.kernelStartPromise = this.startKernel();
   }
 
   get state() {
     // Helper function, used internally to get the current notebook store state.
     return this.store.getState();
+  }
+
+  get kernelId() {
+    return this.state.kernelId;
+  }
+
+  async startKernel() {
+    const kernelId = await invoke<string>("start_kernel", {
+      specName: "python3",
+    });
+    this.store.setState({ kernelId });
   }
 
   addCell(initialText: string): string {
