@@ -12,7 +12,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use ts_rs::TS;
 
-/// A simple newtype around `BTreeMap<String, Value>` so we can give it a TS type.
+/// A simple newtype around `BTreeMap<String, Value>` so we can give it a TS
+/// type.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 #[ts(type = "Record<string, unknown>")]
 pub struct JsonBTreeMap(pub BTreeMap<String, Value>);
