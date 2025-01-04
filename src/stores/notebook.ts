@@ -47,6 +47,8 @@ export type NotebookStoreState = {
       output?: NotebookOutput;
     };
   };
+
+  /** ID of the running kernel, populated after the kernel is started. */
   kernelId?: string;
 };
 
@@ -99,7 +101,7 @@ export class Notebook {
 
     this.store = createStore<NotebookStore>()(
       immer<NotebookStore>((set) => ({
-        kernelId: "",
+        kernelId: undefined,
         cellIds: [],
         cells: {},
 
