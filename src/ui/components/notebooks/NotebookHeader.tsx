@@ -1,10 +1,12 @@
 import {
   ChartLineIcon,
+  HomeIcon,
   PlayIcon,
   PlusIcon,
   RefreshCwIcon,
   SettingsIcon,
 } from "lucide-react";
+import { Link } from "wouter";
 
 type Props = {
   kernelName: string;
@@ -40,6 +42,11 @@ export default function NotebookHeader({ kernelName }: Props) {
 
         {/* Top-right UI components: settings and open notebooks. */}
         <div className="flex items-center">
+          <Link to="/">
+            <button className="rounded p-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-black active:scale-110">
+              <HomeIcon size={20} strokeWidth={1.5} />
+            </button>
+          </Link>
           <button className="rounded p-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-black active:scale-110">
             <SettingsIcon size={20} strokeWidth={1.5} />
           </button>

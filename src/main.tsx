@@ -18,4 +18,4 @@ if ((window as any).__jute_opened_file) {
 }
 
 const root = createRoot(document.getElementById("root")!);
-root.render(<App />);
+root.render(<App openedFile={(window as any).__jute_opened_file} />);

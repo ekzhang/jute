@@ -82,7 +82,23 @@ export class Notebook {
   /** Direct handles to editors and other HTML elements after render. */
   refs: Map<string, CellHandle>;
 
-  constructor() {
+  /** The full path to the notebook. */
+  path: string;
+
+  /** The file name of the notebook. */
+  filename: string;
+
+  /** The directory of the notebook. */
+  directory: string;
+
+  constructor(path: string) {
+    this.path = path;
+
+    const parts = path.split("/");
+
+    this.filename = parts.pop()!;
+    this.directory = parts.join("/");
+
     this.kernelId = "";
     this.kernelStartPromise = (async () => {
       this.kernelId = await invoke("start_kernel", { specName: "python3" });

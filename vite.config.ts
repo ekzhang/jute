@@ -1,4 +1,5 @@
 import react from "@vitejs/plugin-react";
+import path from "path";
 import { defineConfig } from "vite";
 
 // https://vitejs.dev/config/
@@ -18,6 +19,12 @@ export default defineConfig({
     strictPort: true,
     watch: {
       ignored: ["**/src-tauri/**"],
+    },
+  },
+
+  resolve: {
+    alias: {
+      "~": path.resolve(__dirname, "src/ui"),
     },
   },
 });
