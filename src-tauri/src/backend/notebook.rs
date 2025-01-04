@@ -6,35 +6,13 @@
 //! [nbformat v4]: https://github.com/jupyter/nbformat/blob/v5.10.4/nbformat/v4/nbformat.v4.schema.json
 
 use std::collections::BTreeMap;
-use std::ops::{Deref, DerefMut};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use ts_rs::TS;
 
-/// A simple newtype around `BTreeMap<String, Value>` so we can give it a TS
-/// type.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
-#[ts(type = "Record<string, unknown>")]
-pub struct JsonBTreeMap(pub BTreeMap<String, Value>);
-
-impl Deref for JsonBTreeMap {
-    type Target = BTreeMap<String, Value>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for JsonBTreeMap {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 /// Represents the root structure of a Jupyter Notebook file.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
-#[ts(export)]
 pub struct Notebook {
     /// Root-level metadata of the notebook.
     pub metadata: NotebookMetadata,
@@ -115,7 +93,7 @@ pub enum CodeMirrorMode {
     /// String representation of the CodeMirror mode.
     String(String),
     /// Nested object representation of the CodeMirror mode.
-    Object(JsonBTreeMap),
+    Object(BTreeMap<String, Value>),
 }
 
 /// Author information for the notebook document.
@@ -315,7 +293,7 @@ pub struct ErrorOutput {
 }
 
 /// Metadata associated with outputs.
-pub type OutputMetadata = JsonBTreeMap;
+pub type OutputMetadata = BTreeMap<String, Value>;
 
 #[cfg(test)]
 mod tests {
