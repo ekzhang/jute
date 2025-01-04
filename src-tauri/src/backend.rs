@@ -7,5 +7,6 @@ pub use wire_protocol::{create_websocket_connection, create_zeromq_connection, K
 
 pub mod commands;
 pub mod local;
+pub mod notebook;
 pub mod remote;
 pub mod wire_protocol;
