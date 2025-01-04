@@ -11,12 +11,15 @@ use jute::{
     state::State,
     Error,
 };
+use specta_typescript::Typescript;
 use sysinfo::System;
 use tauri::{ipc::Channel, AppHandle, Manager, Runtime, WebviewWindowBuilder};
+use tauri_specta::{collect_commands, Builder};
 use tracing::info;
 use uuid::Uuid;
 
 #[tauri::command]
+#[specta::specta]
 async fn cpu_usage() -> f32 {
     let mut system = System::new();
     system.refresh_cpu();
@@ -27,7 +30,8 @@ async fn cpu_usage() -> f32 {
 
 /// Start a new Jupyter kernel.
 #[tauri::command]
-async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result<String, Error> {
+#[specta::specta]
+async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result<String, String> {
     // TODO: Save the client in a better place.
     // let client = JupyterClient::new("", "")?;
 
@@ -39,9 +43,7 @@ async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result
     {
         Some((_, kernel_spec)) => kernel_spec.clone(),
         None => {
-            return Err(Error::KernelConnect(format!(
-                "no kernel named {spec_name:?} found"
-            )))
+            return Err(format!("could not find kernel spec with name {spec_name}"));
         }
     };
 
@@ -54,9 +56,14 @@ async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result
         }
     }
 
-    let kernel = LocalKernel::start(&kernel_spec).await?;
+    let kernel = LocalKernel::start(&kernel_spec)
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let info = commands::kernel_info(kernel.conn()).await?;
+    let info = commands::kernel_info(kernel.conn())
+        .await
+        .map_err(|e| e.to_string())?;
+
     info!(banner = info.banner, "started new jute kernel");
 
     let kernel_id = String::from(kernel.id());
@@ -158,6 +165,15 @@ fn handle_file_associations(
 
 fn main() {
     tracing_subscriber::fmt().init();
+
+    #[allow(unused_mut)]
+    let mut builder =
+        Builder::<tauri::Wry>::new().commands(collect_commands![cpu_usage, start_kernel]);
+
+    #[cfg(debug_assertions)] // Export TypeScript bindings in debug mode
+    builder
+        .export(Typescript::default(), "../src/bindings.ts")
+        .expect("Failed to export TypeScript bindings");
 
     #[allow(unused_mut)]
     let mut app = tauri::Builder::default();

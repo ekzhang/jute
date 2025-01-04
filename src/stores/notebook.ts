@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
+import { commands } from "@/bindings";
+
 type RunCellEvent =
   | { event: "stdout"; data: string }
   | { event: "stderr"; data: string }
@@ -101,7 +103,10 @@ export class Notebook {
 
     this.kernelId = "";
     this.kernelStartPromise = (async () => {
-      this.kernelId = await invoke("start_kernel", { specName: "python3" });
+      const response = await commands.startKernel("python3");
+      if (response.status !== "error") {
+        this.kernelId = response.data;
+      }
     })();
 
     this.store = createStore<NotebookStore>()(
