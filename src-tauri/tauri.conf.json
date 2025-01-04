@@ -15,7 +15,15 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["binaries/uv"]
+    "externalBin": ["binaries/uv"],
+    "fileAssociations": [
+      {
+        "ext": ["ipynb"],
+        "mimeType": "application/x-ipynb+json",
+        "name": "Jupyter Notebook",
+        "description": "Jupyter Notebook"
+      }
+    ]
   },
   "productName": "Jute",
   "mainBinaryName": "Jute",
@@ -28,16 +36,6 @@
     "security": {
       "csp": null
     },
-    "windows": [
-      {
-        "width": 960,
-        "height": 800,
-        "fullscreen": false,
-        "resizable": true,
-        "title": "Jute",
-        "titleBarStyle": "Overlay",
-        "hiddenTitle": true
-      }
-    ]
+    "windows": []
   }
 }

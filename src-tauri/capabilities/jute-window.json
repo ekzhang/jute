@@ -1,8 +1,8 @@
 {
-  "identifier": "migrated",
-  "description": "permissions that were migrated from v1",
+  "identifier": "jute-window",
+  "description": "Capability for the Jute webviews",
   "local": true,
-  "windows": ["main"],
+  "windows": ["jute-window-*"],
   "permissions": [
     "core:default",
     "core:window:allow-create",
