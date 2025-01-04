@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useParams } from "wouter";
 
 import { Notebook, NotebookContext } from "~/hooks/notebook";
 
@@ -6,8 +7,13 @@ import NotebookCells from "./NotebookCells";
 import NotebookLocation from "./NotebookLocation";
 
 export default function NotebookView() {
+  const { encodedPath } = useParams();
+
   // Single mutable object that is shared between all parts of the notebook.
-  const notebook = useMemo(() => new Notebook(), []);
+  const notebook = useMemo(
+    () => new Notebook(decodeURIComponent(encodedPath || "")),
+    [encodedPath],
+  );
 
   useEffect(() => {
     notebook.addCell(`print("Hello, world!")`);
@@ -31,8 +37,8 @@ plt.plot(np.random.normal(size=(400,)).cumsum())`);
       <div className="grid h-full grid-cols-[1fr,200px] overflow-y-auto">
         <div className="min-w-0 py-16">
           <NotebookLocation
-            directory="/Users/ezhang/Resesarch/Jute/designs"
-            filename="Experiments Dec 31.ipynb"
+            directory={notebook.directory}
+            filename={notebook.filename}
           />
           <NotebookCells />
         </div>

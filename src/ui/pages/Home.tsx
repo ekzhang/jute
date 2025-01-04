@@ -1,9 +1,9 @@
 import { Link } from "wouter";
 
 const sampleNotebookNames = [
-  "Numpy starter",
-  "Data analysis",
-  "Machine learning",
+  "~/Numpy_starter.ipynb",
+  "~/Data_analysis.ipynb",
+  "~/Machine_learning.ipynb",
 ];
 
 export default function Home() {
@@ -17,7 +17,7 @@ export default function Home() {
 
       <div className="flex gap-4">
         {sampleNotebookNames.map((name) => (
-          <Link to={`/notebook/${name}`}>
+          <Link to={`/notebook/${encodeURIComponent(name)}`}>
             <div
               key={name}
               className="flex h-60 w-48 items-end bg-gray-300 p-2 transition-all hover:bg-gray-400"
