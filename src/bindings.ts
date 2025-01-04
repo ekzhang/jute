@@ -11,7 +11,7 @@ async cpuUsage() : Promise<number> {
 /**
  * Start a new Jupyter kernel.
  */
-async startKernel(specName: string) : Promise<Result<string, string>> {
+async startKernel(specName: string) : Promise<Result<string, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("start_kernel", { specName }) };
 } catch (e) {
@@ -31,7 +31,7 @@ async startKernel(specName: string) : Promise<Result<string, string>> {
 
 /** user-defined types **/
 
-
+export type ErrorResponse = { message: string }
 
 /** tauri-specta globals **/
 

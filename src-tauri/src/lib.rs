@@ -3,11 +3,25 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
 
+use std::fmt;
 use std::io;
 
 pub mod backend;
 pub mod plugins;
 pub mod state;
+
+// The error we return from the application.
+#[derive(Debug, Clone, thiserror::Error, serde::Serialize, specta::Type)]
+pub struct ErrorResponse {
+    // The error message.
+    message: String,
+}
+
+impl fmt::Display for ErrorResponse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
 
 /// A serializable error type for application errors.
 #[derive(Debug, thiserror::Error)]
@@ -47,5 +61,28 @@ impl serde::Serialize for Error {
         S: serde::ser::Serializer,
     {
         serializer.serialize_str(self.to_string().as_ref())
+    }
+}
+
+impl Error {
+    /// Translates the error into an ErrorResponse with a basic message.
+    pub fn as_response(&self) -> ErrorResponse {
+        ErrorResponse {
+            message: match self {
+                Error::Subprocess(err) => format!("Failed to run subprocess: {}", err),
+                Error::KernelConnect(msg) => format!("Could not connect to the kernel: {}", msg),
+                Error::KernelDisconnect => "Disconnected from the kernel".to_string(),
+                Error::InvalidUrl(err) => format!("Invalid URL: {}", err),
+                Error::ReqwestError(err) => format!("HTTP failure: {}", err),
+                Error::DeserializeMessage(msg) => format!("Could not deserialize message: {}", msg),
+                Error::Zmq(err) => format!("ZeroMQ error: {}", err),
+            },
+        }
+    }
+}
+
+impl From<Error> for ErrorResponse {
+    fn from(error: Error) -> Self {
+        error.as_response()
     }
 }

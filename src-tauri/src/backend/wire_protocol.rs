@@ -453,7 +453,7 @@ pub struct ExecuteInput {
 }
 
 /// Results of a code execution, such as the output or return value.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, specta::Type)]
 pub struct ExecuteResult {
     /// The execution count, which increments with each request that stores
     /// history.

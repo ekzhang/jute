@@ -27,7 +27,7 @@ pub async fn kernel_info(conn: &KernelConnection) -> Result<KernelInfoReply, Err
 }
 
 /// Events that can be received while running a cell.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "snake_case", tag = "event", content = "data")]
 pub enum RunCellEvent {
     /// Standard output from the kernel.

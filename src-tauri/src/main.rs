@@ -9,7 +9,7 @@ use jute::{
         local::{environment, LocalKernel},
     },
     state::State,
-    Error,
+    Error, ErrorResponse,
 };
 use specta_typescript::Typescript;
 use sysinfo::System;
@@ -31,7 +31,10 @@ async fn cpu_usage() -> f32 {
 /// Start a new Jupyter kernel.
 #[tauri::command]
 #[specta::specta]
-async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result<String, String> {
+async fn start_kernel(
+    spec_name: &str,
+    state: tauri::State<'_, State>,
+) -> Result<String, ErrorResponse> {
     // TODO: Save the client in a better place.
     // let client = JupyterClient::new("", "")?;
 
@@ -43,7 +46,9 @@ async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result
     {
         Some((_, kernel_spec)) => kernel_spec.clone(),
         None => {
-            return Err(format!("could not find kernel spec with name {spec_name}"));
+            return Err(Error::KernelConnect(format!(
+                "no kernel named {spec_name:?} found"
+            )))?;
         }
     };
 
@@ -56,13 +61,9 @@ async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result
         }
     }
 
-    let kernel = LocalKernel::start(&kernel_spec)
-        .await
-        .map_err(|e| e.to_string())?;
+    let kernel = LocalKernel::start(&kernel_spec).await?;
 
-    let info = commands::kernel_info(kernel.conn())
-        .await
-        .map_err(|e| e.to_string())?;
+    let info = commands::kernel_info(kernel.conn()).await?;
 
     info!(banner = info.banner, "started new jute kernel");
 
@@ -72,23 +73,26 @@ async fn start_kernel(spec_name: &str, state: tauri::State<'_, State>) -> Result
 }
 
 #[tauri::command]
-async fn stop_kernel(kernel_id: &str, state: tauri::State<'_, State>) -> Result<(), Error> {
+#[specta::specta]
+async fn stop_kernel(kernel_id: &str, state: tauri::State<'_, State>) -> Result<(), ErrorResponse> {
     info!("stopping jute kernel {kernel_id}");
     let (_, mut kernel) = state
         .kernels
         .remove(kernel_id)
         .ok_or(Error::KernelDisconnect)?;
+
     kernel.kill().await?;
     Ok(())
 }
 
 #[tauri::command]
+#[specta::specta]
 async fn run_cell(
     kernel_id: &str,
     code: &str,
     on_event: Channel<RunCellEvent>,
     state: tauri::State<'_, State>,
-) -> Result<(), Error> {
+) -> Result<(), ErrorResponse> {
     let conn = state
         .kernels
         .get(kernel_id)
@@ -167,12 +171,16 @@ fn main() {
     tracing_subscriber::fmt().init();
 
     #[allow(unused_mut)]
-    let mut builder =
-        Builder::<tauri::Wry>::new().commands(collect_commands![cpu_usage, start_kernel]);
+    let mut builder = Builder::<tauri::Wry>::new().commands(collect_commands![
+        cpu_usage,
+        start_kernel,
+        stop_kernel,
+        run_cell
+    ]);
 
     #[cfg(debug_assertions)] // Export TypeScript bindings in debug mode
     builder
-        .export(Typescript::default(), "../src/bindings.ts")
+        .export(Typescript::default(), "../src/api/bindings.ts")
         .expect("Failed to export TypeScript bindings");
 
     #[allow(unused_mut)]
