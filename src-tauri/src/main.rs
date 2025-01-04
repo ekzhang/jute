@@ -100,14 +100,17 @@ async fn run_cell(
 
 /// Initializes window size, min width, and other common settings on the
 /// builder.
-fn initialize_window_builder<R: Runtime, M: Manager<R>>(
-    manager: &M,
-) -> WebviewWindowBuilder<'_, R, M> {
+fn initialize_window_builder<'a, R: Runtime, M: Manager<R>>(
+    manager: &'a M,
+    path: &str,
+) -> WebviewWindowBuilder<'a, R, M> {
     // Generate a unique window label since duplicates are not allowed.
     let label = format!("jute-window-{}", Uuid::new_v4());
 
+    let url = tauri::WebviewUrl::App(path.trim_start_matches('/').into());
+
     #[allow(unused_mut)]
-    let mut builder = WebviewWindowBuilder::new(manager, &label, Default::default())
+    let mut builder = WebviewWindowBuilder::new(manager, &label, url)
         .title("Jute")
         .inner_size(960.0, 800.0)
         .min_inner_size(720.0, 600.0)
@@ -146,10 +149,8 @@ fn handle_file_associations(
     files: &[PathBuf],
 ) -> Result<(), Box<dyn std::error::Error>> {
     for file in files {
-        let file_json_str = serde_json::to_string(file)?;
-        initialize_window_builder(app)
-            .initialization_script(&format!("window.__jute_opened_file = {file_json_str};"))
-            .build()?;
+        let query = serde_urlencoded::to_string([("path", file.to_string_lossy())])?;
+        initialize_window_builder(app, &format!("/notebook?{query}")).build()?;
     }
 
     Ok(())
@@ -199,7 +200,7 @@ fn main() {
                 if files.is_empty() {
                     // Open a default window if no files were provided (this is if you opened the
                     // app in the launcher, for instance).
-                    initialize_window_builder(app).build()?;
+                    initialize_window_builder(app, "/").build()?;
                 } else {
                     handle_file_associations(app.handle(), &files)?;
                 }
@@ -225,7 +226,7 @@ fn main() {
                     tauri::RunEvent::Ready => {
                         // If no files were opened, open a default window.
                         if app.webview_windows().is_empty() {
-                            initialize_window_builder(app).build().unwrap();
+                            initialize_window_builder(app, "/").build().unwrap();
                         }
                     }
                     _ => {}

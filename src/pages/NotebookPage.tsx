@@ -1,12 +1,11 @@
-import { useParams } from "wouter";
+import { useSearch } from "wouter";
 
 import NotebookFooter from "@/ui/notebook/NotebookFooter";
 import NotebookHeader from "@/ui/notebook/NotebookHeader";
 import NotebookView from "@/ui/notebook/NotebookView";
 
 export default function NotebookPage() {
-  const { encodedPath } = useParams();
-  const path = decodeURIComponent(encodedPath!);
+  const { path } = Object.fromEntries(new URLSearchParams(useSearch()));
 
   return (
     <main className="absolute inset-0 bg-white">

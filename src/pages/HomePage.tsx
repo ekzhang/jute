@@ -16,8 +16,8 @@ export default function HomePage() {
       </h2>
 
       <div className="flex gap-4">
-        {sampleNotebookNames.map((name) => (
-          <Link to={`/notebook/${encodeURIComponent(name)}`}>
+        {sampleNotebookNames.map((name, i) => (
+          <Link key={i} to={"/notebook?" + new URLSearchParams({ path: name })}>
             <div
               key={name}
               className="flex h-60 w-48 items-end bg-gray-300 p-2 transition-all hover:bg-gray-400"

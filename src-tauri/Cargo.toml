@@ -18,9 +18,10 @@ rand = "0.8.5"
 reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_urlencoded = "0.7.1"
 sha2 = "0.10.8"
 sysinfo = "0.30.3"
-tauri = { version = "2.0.4", features = ["macos-private-api"] }
+tauri = { version = "2.0.4", features = ["devtools", "macos-private-api"] }
 tauri-plugin-shell = "2.2.0"
 thiserror = "1.0.57"
 time = { version = "0.3.36", features = ["serde", "serde-human-readable"] }
