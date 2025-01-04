@@ -106,14 +106,22 @@ fn initialize_window_builder<R: Runtime, M: Manager<R>>(
     // Generate a unique window label since duplicates are not allowed.
     let label = format!("jute-window-{}", Uuid::new_v4());
 
-    WebviewWindowBuilder::new(manager, &label, Default::default())
+    #[allow(unused_mut)]
+    let mut builder = WebviewWindowBuilder::new(manager, &label, Default::default())
         .title("Jute")
         .inner_size(960.0, 800.0)
         .min_inner_size(720.0, 600.0)
         .fullscreen(false)
-        .resizable(true)
-        .title_bar_style(tauri::TitleBarStyle::Overlay) // macOS only
-        .hidden_title(true) // macOS only
+        .resizable(true);
+
+    #[cfg(target_os = "macos")]
+    {
+        // These methods are only available on macOS.
+        builder = builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+        builder = builder.hidden_title(true);
+    }
+
+    builder
 }
 
 /// Handle file associations opened in the application.
@@ -201,24 +209,27 @@ fn main() {
         })
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        .run(|app, event| {
-            // Handle files opened in macOS.
-            #[cfg(target_os = "macos")]
-            match event {
-                tauri::RunEvent::Opened { urls } => {
-                    let files = urls
-                        .into_iter()
-                        .filter_map(|url| url.to_file_path().ok())
-                        .collect::<Vec<_>>();
-                    handle_file_associations(app, &files).unwrap();
-                }
-                tauri::RunEvent::Ready => {
-                    // If no files were opened, open a default window.
-                    if app.webview_windows().is_empty() {
-                        initialize_window_builder(app).build().unwrap();
+        .run(
+            #[allow(unused_variables)]
+            |app, event| {
+                // Handle files opened in macOS.
+                #[cfg(target_os = "macos")]
+                match event {
+                    tauri::RunEvent::Opened { urls } => {
+                        let files = urls
+                            .into_iter()
+                            .filter_map(|url| url.to_file_path().ok())
+                            .collect::<Vec<_>>();
+                        handle_file_associations(app, &files).unwrap();
                     }
+                    tauri::RunEvent::Ready => {
+                        // If no files were opened, open a default window.
+                        if app.webview_windows().is_empty() {
+                            initialize_window_builder(app).build().unwrap();
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
-            }
-        });
+            },
+        );
 }
