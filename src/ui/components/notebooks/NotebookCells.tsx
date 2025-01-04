@@ -10,10 +10,9 @@ import {
 } from "lucide-react";
 import { ReactNode, Suspense, lazy } from "react";
 import { useStore } from "zustand";
-
-import { useNotebook } from "../../hooks/notebook";
-import CellInputFallback from "../cells/CellInputFallback";
-import OutputView from "../cells/OutputView";
+import CellInputFallback from "~/components/cells/CellInputFallback";
+import OutputView from "~/components/cells/OutputView";
+import { useNotebook } from "~/hooks/notebook";
 
 const CellInput = lazy(() => import("../cells/CellInput"));
 

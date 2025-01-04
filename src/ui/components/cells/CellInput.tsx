@@ -33,8 +33,8 @@ import {
 } from "@codemirror/view";
 import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
+import { useNotebook } from "~/hooks/notebook";
 
-import { useNotebook } from "../../hooks/notebook";
 import CellInputFallback from "./CellInputFallback";
 
 type Props = {

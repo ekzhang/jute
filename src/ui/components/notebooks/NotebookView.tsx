@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
+import { Notebook, NotebookContext } from "~/hooks/notebook";
 
-import { Notebook, NotebookContext } from "../../hooks/notebook";
 import NotebookCells from "./NotebookCells";
 import NotebookLocation from "./NotebookLocation";
 
