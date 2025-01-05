@@ -3,7 +3,7 @@
 /**
  * Error output.
  */
-export type ErrorOutput = {
+export type OutputError = {
   /**
    * Name of the error.
    */

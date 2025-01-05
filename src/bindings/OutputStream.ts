@@ -4,7 +4,7 @@ import type { MultilineString } from "./MultilineString";
 /**
  * Stream output.
  */
-export type Stream = {
+export type OutputStream = {
   /**
    * Name of the stream (e.g., stdout or stderr).
    */

@@ -135,7 +135,7 @@ pub struct RawCell {
     pub source: MultilineString,
 
     /// Attachments (e.g., images) in the cell.
-    pub attachments: Option<Attachments>,
+    pub attachments: Option<CellAttachments>,
 }
 
 /// Markdown cell in the notebook.
@@ -151,7 +151,7 @@ pub struct MarkdownCell {
     pub source: MultilineString,
 
     /// Attachments (e.g., images) in the cell.
-    pub attachments: Option<Attachments>,
+    pub attachments: Option<CellAttachments>,
 }
 
 /// Code cell in the notebook.
@@ -183,7 +183,7 @@ pub struct CellMetadata {
 }
 
 /// Attachments for a cell, represented as MIME bundles keyed by filenames.
-pub type Attachments = BTreeMap<String, MimeBundle>;
+pub type CellAttachments = BTreeMap<String, MimeBundle>;
 
 /// MIME bundle for representing various types of data.
 pub type MimeBundle = BTreeMap<String, MultilineString>;
@@ -214,21 +214,21 @@ impl From<MultilineString> for String {
 #[serde(tag = "output_type", rename_all = "snake_case")]
 pub enum Output {
     /// Execution result output.
-    ExecuteResult(ExecuteResult),
+    ExecuteResult(OutputExecuteResult),
 
     /// Display data output.
-    DisplayData(DisplayData),
+    DisplayData(OutputDisplayData),
 
     /// Stream output.
-    Stream(Stream),
+    Stream(OutputStream),
 
     /// Error output.
-    Error(ErrorOutput),
+    Error(OutputError),
 }
 
 /// Result of executing a code cell.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
-pub struct ExecuteResult {
+pub struct OutputExecuteResult {
     /// Execution count of the result.
     pub execution_count: Option<u32>,
 
@@ -246,7 +246,7 @@ pub struct ExecuteResult {
 
 /// Display data output.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
-pub struct DisplayData {
+pub struct OutputDisplayData {
     /// Data to display.
     pub data: MimeBundle,
 
@@ -261,7 +261,7 @@ pub struct DisplayData {
 
 /// Stream output.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
-pub struct Stream {
+pub struct OutputStream {
     /// Name of the stream (e.g., stdout or stderr).
     pub name: String,
 
@@ -276,7 +276,7 @@ pub struct Stream {
 
 /// Error output.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
-pub struct ErrorOutput {
+pub struct OutputError {
     /// Name of the error.
     pub ename: String,
 

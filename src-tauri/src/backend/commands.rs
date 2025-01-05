@@ -1,6 +1,7 @@
 //! High-level APIs for doing operations over [`KernelConnection`] objects.
 
 use serde::Serialize;
+use ts_rs::TS;
 
 use super::{
     wire_protocol::{
@@ -27,7 +28,7 @@ pub async fn kernel_info(conn: &KernelConnection) -> Result<KernelInfoReply, Err
 }
 
 /// Events that can be received while running a cell.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "snake_case", tag = "event", content = "data")]
 pub enum RunCellEvent {
     /// Standard output from the kernel.

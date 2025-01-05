@@ -6,36 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-type RunCellEvent =
-  | { event: "stdout"; data: string }
-  | { event: "stderr"; data: string }
-  | {
-      event: "execute_result";
-      data: {
-        execution_count: number;
-        data: Record<string, any>;
-        metadata: Record<string, any>;
-      };
-    }
-  | {
-      event: "display_data" | "update_display_data";
-      data: {
-        data: Record<string, any>;
-        metadata: Record<string, any>;
-        transient: {
-          display_id: string | null;
-        } | null;
-      };
-    }
-  | {
-      event: "error";
-      data: {
-        ename: string;
-        evalue: string;
-        traceback: string[];
-      };
-    }
-  | { event: "disconnect"; data: string };
+import type { RunCellEvent } from "@/bindings";
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
 

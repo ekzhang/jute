@@ -13,6 +13,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use time::OffsetDateTime;
 use tokio::sync::oneshot;
 use tokio_util::sync::{CancellationToken, DropGuard};
+use ts_rs::TS;
 use uuid::Uuid;
 
 pub use self::driver_websocket::create_websocket_connection;
@@ -23,7 +24,7 @@ mod driver_websocket;
 mod driver_zeromq;
 
 /// Type of a kernel wire protocol message, either request or reply.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 #[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum KernelMessageType {
@@ -121,7 +122,7 @@ pub enum KernelMessageType {
 
 /// Header of a message, generally part of the {header, parent_header, metadata,
 /// content, buffers} 5-tuple.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct KernelHeader {
     /// Typically UUID, must be unique per message.
     pub msg_id: String,
@@ -134,6 +135,7 @@ pub struct KernelHeader {
 
     /// ISO 8601 timestamp for when the message is created.
     #[serde(with = "time::serde::iso8601")]
+    #[ts(type = "string")]
     pub date: OffsetDateTime,
 
     /// The message type.
@@ -204,7 +206,7 @@ impl KernelMessage {
 }
 
 /// The content of a reply to a kernel message, with status attached.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum Reply<T> {
     /// The request was processed successfully.
@@ -223,7 +225,7 @@ pub enum Reply<T> {
 }
 
 /// Content of an error response message.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ErrorReply {
     /// The error name, such as 'NameError'.
     pub ename: String,
@@ -236,7 +238,7 @@ pub struct ErrorReply {
 }
 
 /// Execute code on behalf of the user.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ExecuteRequest {
     /// Source code to be executed by the kernel, one or more lines.
     pub code: String,
@@ -266,7 +268,7 @@ pub struct ExecuteRequest {
 }
 
 /// Represents a reply to an execute request.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ExecuteReply {
     /// The execution count, which increments with each request that stores
     /// history.
@@ -279,7 +281,7 @@ pub struct ExecuteReply {
 
 /// Request for introspection of code to retrieve useful information as
 /// determined by the kernel.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct InspectRequest {
     /// The code context in which introspection is requested, potentially
     /// multiple lines.
@@ -296,7 +298,7 @@ pub struct InspectRequest {
 
 /// Represents a reply to an inspect request with potentially formatted
 /// information about the code context.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct InspectReply {
     /// Indicates whether an object was found during the inspection.
     pub found: bool,
@@ -311,7 +313,7 @@ pub struct InspectReply {
 
 /// Request for code completion based on the context provided in the code and
 /// cursor position.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct CompleteRequest {
     /// The code context in which completion is requested, possibly a multiline
     /// string.
@@ -323,7 +325,7 @@ pub struct CompleteRequest {
 }
 
 /// Represents a reply to a completion request.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct CompleteReply {
     /// A list of all matches to the completion request.
     pub matches: Vec<String>,
@@ -341,12 +343,12 @@ pub struct CompleteReply {
 }
 
 /// Request for information about the kernel.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct KernelInfoRequest {}
 
 /// Represents a reply to a kernel_info request, providing details about the
 /// kernel.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct KernelInfoReply {
     /// Version of the messaging protocol used by the kernel.
     pub protocol_version: String,
@@ -369,7 +371,7 @@ pub struct KernelInfoReply {
 }
 
 /// Detailed information about the programming language of the kernel.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct LanguageInfo {
     /// Name of the programming language.
     pub name: String,
@@ -389,14 +391,14 @@ pub struct LanguageInfo {
 }
 
 /// Request to shut down the kernel, possibly to prepare for a restart.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ShutdownRequest {
     /// Indicates whether the shutdown is final or precedes a restart.
     pub restart: bool,
 }
 
 /// Represents a reply to a shutdown request.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ShutdownReply {
     /// Matches the restart flag from the request to indicate the intended
     /// shutdown behavior.
@@ -404,15 +406,15 @@ pub struct ShutdownReply {
 }
 
 /// Request to interrupt the kernel's current operation.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct InterruptRequest {}
 
 /// Represents a reply to an interrupt request.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct InterruptReply {}
 
 /// Streams of output from the kernel, such as stdout and stderr.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct Stream {
     /// The name of the stream, one of 'stdout' or 'stderr'.
     pub name: String,
@@ -422,7 +424,7 @@ pub struct Stream {
 }
 
 /// Data to be displayed in frontends, such as images or HTML.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct DisplayData {
     /// The data to be displayed, typically a MIME type and the data itself.
     pub data: BTreeMap<String, serde_json::Value>,
@@ -435,14 +437,14 @@ pub struct DisplayData {
 }
 
 /// Transient data associated with display data, such as display IDs.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct DisplayDataTransient {
     /// Specifies an ID for the display, which can be updated.
     pub display_id: Option<String>,
 }
 
 /// Re-broadcast of code in an execute request to let all frontends know.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ExecuteInput {
     /// The code that was executed.
     pub code: String,
@@ -453,7 +455,7 @@ pub struct ExecuteInput {
 }
 
 /// Results of a code execution, such as the output or return value.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ExecuteResult {
     /// The execution count, which increments with each request that stores
     /// history.
@@ -469,7 +471,7 @@ pub struct ExecuteResult {
 }
 
 /// Used by frontends to monitor the status of the kernel.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct Status {
     /// Current status of the kernel.
     pub execution_state: KernelStatus,
@@ -479,7 +481,7 @@ pub struct Status {
 /// it will enter the 'busy' state and when it finishes, it will enter the
 /// 'idle' state. The kernel will publish state 'starting' exactly once at
 /// process startup.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq, TS)]
 #[serde(rename_all = "snake_case")]
 pub enum KernelStatus {
     /// The kernel is starting up.
@@ -493,7 +495,7 @@ pub enum KernelStatus {
 }
 
 /// Request to clear output visible on the frontend.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ClearOutput {
     /// The wait flag, which if true, indicates that the frontend should wait
     /// for the clear output request to complete before sending further
