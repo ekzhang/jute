@@ -29,13 +29,13 @@ pub struct Notebook {
 }
 
 impl Notebook {
-    // Loads a notebook from a JSON string.
+    /// Loads a notebook from a JSON string.
     pub fn load_from_str(s: &str) -> Result<Self, crate::Error> {
         let notebook: Notebook = serde_json::from_str(s).map_err(crate::Error::from)?;
         Ok(notebook)
     }
 
-    // Loads a notebook from a file path.
+    /// Loads a notebook from a file path.
     pub fn load_from_path(path: &str) -> Result<Self, crate::Error> {
         let s = std::fs::read_to_string(path)?;
         Self::load_from_str(&s)
