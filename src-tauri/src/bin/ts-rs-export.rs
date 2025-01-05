@@ -33,20 +33,6 @@ fn main() {
         exit(1);
     }
 
-    // Format the bindings with Prettier
-    println!("Formatting with Prettier...");
-    let status = Command::new("npx")
-        .arg("prettier")
-        .arg("--write")
-        .arg(format!("{}/**/*.ts", export_path.display()))
-        .status()
-        .expect("Failed to run Prettier");
-
-    if !status.success() {
-        eprintln!("Prettier formatting failed");
-        exit(1);
-    }
-
     // Generate `index.ts` file
     println!("Generating index.ts...");
     let mut index_file = String::new();
@@ -62,6 +48,20 @@ fn main() {
     }
 
     fs::write(export_path.join("index.ts"), index_file).expect("Failed to write index.ts");
+
+    // Format the bindings with Prettier
+    println!("Formatting with Prettier...");
+    let status = Command::new("npx")
+        .arg("prettier")
+        .arg("--write")
+        .arg(format!("{}/**/*.ts", export_path.display()))
+        .status()
+        .expect("Failed to run Prettier");
+
+    if !status.success() {
+        eprintln!("Prettier formatting failed");
+        exit(1);
+    }
 
     println!("Done!");
 }
