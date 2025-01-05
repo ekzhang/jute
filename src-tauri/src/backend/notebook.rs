@@ -9,9 +9,10 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use ts_rs::TS;
 
 /// Represents the root structure of a Jupyter Notebook file.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct Notebook {
     /// Root-level metadata of the notebook.
     pub metadata: NotebookMetadata,
@@ -28,7 +29,7 @@ pub struct Notebook {
 }
 
 /// Root-level metadata for the notebook.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct NotebookMetadata {
     /// Kernel information.
     pub kernelspec: Option<KernelSpec>,
@@ -47,11 +48,12 @@ pub struct NotebookMetadata {
 
     /// Additional unrecognized attributes in metadata.
     #[serde(flatten)]
+    #[ts(skip)]
     pub other: Map<String, Value>,
 }
 
 /// Kernel specification metadata.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct KernelSpec {
     /// Name of the kernel specification.
     pub name: String,
@@ -61,7 +63,7 @@ pub struct KernelSpec {
 }
 
 /// Programming language information.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct LanguageInfo {
     /// Programming language name.
     pub name: String,
@@ -80,11 +82,12 @@ pub struct LanguageInfo {
 
     /// Additional unrecognized attributes in language information.
     #[serde(flatten)]
+    #[ts(skip)]
     pub other: Map<String, Value>,
 }
 
 /// Represents the CodeMirror mode, which could be a string or a nested object.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 #[serde(untagged)]
 pub enum CodeMirrorMode {
     /// String representation of the CodeMirror mode.
@@ -94,18 +97,19 @@ pub enum CodeMirrorMode {
 }
 
 /// Author information for the notebook document.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct Author {
     /// Name of the author.
     pub name: Option<String>,
 
     /// Additional unrecognized attributes for authors.
     #[serde(flatten)]
+    #[ts(skip)]
     pub other: Map<String, Value>,
 }
 
 /// Represents a notebook cell, which can be a raw, markdown, or code cell.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 #[serde(tag = "cell_type", rename_all = "snake_case")]
 pub enum Cell {
     /// Raw cell type.
@@ -119,7 +123,7 @@ pub enum Cell {
 }
 
 /// Raw cell in the notebook.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct RawCell {
     /// Identifier of the cell.
     pub id: String,
@@ -135,7 +139,7 @@ pub struct RawCell {
 }
 
 /// Markdown cell in the notebook.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct MarkdownCell {
     /// Identifier of the cell.
     pub id: String,
@@ -151,7 +155,7 @@ pub struct MarkdownCell {
 }
 
 /// Code cell in the notebook.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct CodeCell {
     /// Identifier of the cell.
     pub id: String,
@@ -170,10 +174,11 @@ pub struct CodeCell {
 }
 
 /// Metadata for a cell.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct CellMetadata {
     /// Additional unrecognized attributes in cell metadata.
     #[serde(flatten)]
+    #[ts(skip)]
     pub other: Map<String, Value>,
 }
 
@@ -184,7 +189,7 @@ pub type Attachments = BTreeMap<String, MimeBundle>;
 pub type MimeBundle = BTreeMap<String, MultilineString>;
 
 /// Represents a string or array of strings (multiline).
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 #[serde(untagged)]
 pub enum MultilineString {
     /// Single-line string.
@@ -205,7 +210,7 @@ impl From<MultilineString> for String {
 }
 
 /// Output from executing a code cell.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 #[serde(tag = "output_type", rename_all = "snake_case")]
 pub enum Output {
     /// Execution result output.
@@ -222,7 +227,7 @@ pub enum Output {
 }
 
 /// Result of executing a code cell.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ExecuteResult {
     /// Execution count of the result.
     pub execution_count: Option<u32>,
@@ -235,11 +240,12 @@ pub struct ExecuteResult {
 
     /// Additional unrecognized attributes in execution results.
     #[serde(flatten)]
+    #[ts(skip)]
     pub other: Map<String, Value>,
 }
 
 /// Display data output.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct DisplayData {
     /// Data to display.
     pub data: MimeBundle,
@@ -249,11 +255,12 @@ pub struct DisplayData {
 
     /// Additional unrecognized attributes in display data.
     #[serde(flatten)]
+    #[ts(skip)]
     pub other: Map<String, Value>,
 }
 
 /// Stream output.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct Stream {
     /// Name of the stream (e.g., stdout or stderr).
     pub name: String,
@@ -263,11 +270,12 @@ pub struct Stream {
 
     /// Additional unrecognized attributes in stream output.
     #[serde(flatten)]
+    #[ts(skip)]
     pub other: Map<String, Value>,
 }
 
 /// Error output.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ErrorOutput {
     /// Name of the error.
     pub ename: String,
@@ -280,6 +288,7 @@ pub struct ErrorOutput {
 
     /// Additional unrecognized attributes in error output.
     #[serde(flatten)]
+    #[ts(skip)]
     pub other: Map<String, Value>,
 }
 
