@@ -1,5 +1,4 @@
-import { open } from '@tauri-apps/plugin-dialog';
-
+import { open } from "@tauri-apps/plugin-dialog";
 import { ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -32,11 +31,14 @@ export default function HomePage() {
         ))}
       </div>
 
-      <button className="w-fit flex items-center gap-2" onClick={async () => {
-        const file = await open({ multiple: false, directory: false });
-        if (file)
-          navigate("/notebook?" + new URLSearchParams({ path: file }));
-      }}>
+      <button
+        className="flex w-fit items-center gap-2"
+        onClick={async () => {
+          const file = await open({ multiple: false, directory: false });
+          if (file)
+            navigate("/notebook?" + new URLSearchParams({ path: file }));
+        }}
+      >
         Open a notebook <ArrowRight size="1em" />
       </button>
     </div>

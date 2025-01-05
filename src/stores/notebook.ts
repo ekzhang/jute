@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import type { RunCellEvent, Notebook as NotebookType } from "@/bindings";
+import type { Notebook as NotebookType, RunCellEvent } from "@/bindings";
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
 
@@ -112,14 +112,19 @@ export class Notebook {
   }
 
   async loadNotebook() {
-    const notebook = await invoke<NotebookType>("get_notebook", { path: this.path });
+    const notebook = await invoke<NotebookType>("get_notebook", {
+      path: this.path,
+    });
 
     this.state.cellIds = notebook.cells.map((cell) => cell.id);
 
     this.state.cells = notebook.cells.reduce((acc, cell) => {
       this.refs.set(cell.id, {});
       acc[cell.id] = {
-        initialText: typeof cell.source === "string" ? cell.source : cell.source.join("\n"),
+        initialText:
+          typeof cell.source === "string"
+            ? cell.source
+            : cell.source.join("\n"),
         output: undefined,
       };
       return acc;
