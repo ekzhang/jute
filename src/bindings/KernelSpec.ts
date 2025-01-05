@@ -3,12 +3,13 @@
 /**
  * Kernel specification metadata.
  */
-export type KernelSpec = { 
-/**
- * Name of the kernel specification.
- */
-name: string, 
-/**
- * Display name of the kernel.
- */
-display_name: string, };
+export type KernelSpec = {
+  /**
+   * Name of the kernel specification.
+   */
+  name: string;
+  /**
+   * Display name of the kernel.
+   */
+  display_name: string;
+};

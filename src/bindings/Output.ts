@@ -7,4 +7,8 @@ import type { Stream } from "./Stream";
 /**
  * Output from executing a code cell.
  */
-export type Output = { "output_type": "execute_result" } & ExecuteResult | { "output_type": "display_data" } & DisplayData | { "output_type": "stream" } & Stream | { "output_type": "error" } & ErrorOutput;
+export type Output =
+  | ({ output_type: "execute_result" } & ExecuteResult)
+  | ({ output_type: "display_data" } & DisplayData)
+  | ({ output_type: "stream" } & Stream)
+  | ({ output_type: "error" } & ErrorOutput);

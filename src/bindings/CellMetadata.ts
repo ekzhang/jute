@@ -3,4 +3,4 @@
 /**
  * Metadata for a cell.
  */
-export type CellMetadata = {  };
+export type CellMetadata = {};

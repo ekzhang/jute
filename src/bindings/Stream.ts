@@ -4,12 +4,13 @@ import type { MultilineString } from "./MultilineString";
 /**
  * Stream output.
  */
-export type Stream = { 
-/**
- * Name of the stream (e.g., stdout or stderr).
- */
-name: string, 
-/**
- * Text content of the stream.
- */
-text: MultilineString, };
+export type Stream = {
+  /**
+   * Name of the stream (e.g., stdout or stderr).
+   */
+  name: string;
+  /**
+   * Text content of the stream.
+   */
+  text: MultilineString;
+};

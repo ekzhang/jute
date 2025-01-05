@@ -6,24 +6,25 @@ import type { LanguageInfo } from "./LanguageInfo";
 /**
  * Root-level metadata for the notebook.
  */
-export type NotebookMetadata = { 
-/**
- * Kernel information.
- */
-kernelspec: KernelSpec | null, 
-/**
- * Programming language information.
- */
-language_info: LanguageInfo | null, 
-/**
- * Original notebook format before conversion.
- */
-orig_nbformat: number | null, 
-/**
- * Title of the notebook document.
- */
-title: string | null, 
-/**
- * Authors of the notebook document.
- */
-authors: Array<Author> | null, };
+export type NotebookMetadata = {
+  /**
+   * Kernel information.
+   */
+  kernelspec: KernelSpec | null;
+  /**
+   * Programming language information.
+   */
+  language_info: LanguageInfo | null;
+  /**
+   * Original notebook format before conversion.
+   */
+  orig_nbformat: number | null;
+  /**
+   * Title of the notebook document.
+   */
+  title: string | null;
+  /**
+   * Authors of the notebook document.
+   */
+  authors: Array<Author> | null;
+};

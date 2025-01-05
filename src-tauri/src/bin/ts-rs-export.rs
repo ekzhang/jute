@@ -1,17 +1,20 @@
 use std::{
-    env, fs,
+    fs,
     path::Path,
     process::{exit, Command},
 };
 
+use jute::backend::notebook::Notebook;
 use ts_rs::TS;
 
 fn main() {
-    // Set TS_RS_EXPORT_DIR environment variable
-    let export_dir = "src/bindings";
-    env::set_var("TS_RS_EXPORT_DIR", export_dir);
+    let export_path = Path::new("../src/bindings");
 
-    let export_path = Path::new(export_dir);
+    // print the full path of the export directory
+    println!(
+        "Exporting TypeScript bindings to `{:?}`",
+        fs::canonicalize(export_path).expect("Failed to get full path of export directory")
+    );
 
     // Clear the `src/bindings` directory
     if export_path.exists() {
@@ -24,14 +27,18 @@ fn main() {
     // Generate TypeScript bindings
     println!("Exporting TypeScript bindings...");
 
-    // generate bindings
+    let result = Notebook::export_all_to(export_path);
+    if let Err(e) = result {
+        eprintln!("Failed to export TypeScript bindings: {}", e);
+        exit(1);
+    }
 
     // Format the bindings with Prettier
     println!("Formatting with Prettier...");
     let status = Command::new("npx")
         .arg("prettier")
         .arg("--write")
-        .arg(format!("{}/**/*.ts", export_dir))
+        .arg(format!("{}/**/*.ts", export_path.display()))
         .status()
         .expect("Failed to run Prettier");
 

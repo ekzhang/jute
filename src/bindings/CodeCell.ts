@@ -6,24 +6,25 @@ import type { Output } from "./Output";
 /**
  * Code cell in the notebook.
  */
-export type CodeCell = { 
-/**
- * Identifier of the cell.
- */
-id: string, 
-/**
- * Metadata for the cell.
- */
-metadata: CellMetadata, 
-/**
- * Content of the cell.
- */
-source: MultilineString, 
-/**
- * Execution count of the cell (null if not executed).
- */
-execution_count: number | null, 
-/**
- * Outputs from executing the cell.
- */
-outputs: Array<Output>, };
+export type CodeCell = {
+  /**
+   * Identifier of the cell.
+   */
+  id: string;
+  /**
+   * Metadata for the cell.
+   */
+  metadata: CellMetadata;
+  /**
+   * Content of the cell.
+   */
+  source: MultilineString;
+  /**
+   * Execution count of the cell (null if not executed).
+   */
+  execution_count: number | null;
+  /**
+   * Outputs from executing the cell.
+   */
+  outputs: Array<Output>;
+};

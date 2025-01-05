@@ -3,16 +3,17 @@
 /**
  * Error output.
  */
-export type ErrorOutput = { 
-/**
- * Name of the error.
- */
-ename: string, 
-/**
- * Value or message of the error.
- */
-evalue: string, 
-/**
- * Traceback of the error.
- */
-traceback: Array<string>, };
+export type ErrorOutput = {
+  /**
+   * Name of the error.
+   */
+  ename: string;
+  /**
+   * Value or message of the error.
+   */
+  evalue: string;
+  /**
+   * Traceback of the error.
+   */
+  traceback: Array<string>;
+};

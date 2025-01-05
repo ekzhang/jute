@@ -6,4 +6,7 @@ import type { RawCell } from "./RawCell";
 /**
  * Represents a notebook cell, which can be a raw, markdown, or code cell.
  */
-export type Cell = { "cell_type": "raw" } & RawCell | { "cell_type": "markdown" } & MarkdownCell | { "cell_type": "code" } & CodeCell;
+export type Cell =
+  | ({ cell_type: "raw" } & RawCell)
+  | ({ cell_type: "markdown" } & MarkdownCell)
+  | ({ cell_type: "code" } & CodeCell);

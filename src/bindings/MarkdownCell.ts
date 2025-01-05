@@ -5,20 +5,23 @@ import type { MultilineString } from "./MultilineString";
 /**
  * Markdown cell in the notebook.
  */
-export type MarkdownCell = { 
-/**
- * Identifier of the cell.
- */
-id: string, 
-/**
- * Metadata for the cell.
- */
-metadata: CellMetadata, 
-/**
- * Content of the cell.
- */
-source: MultilineString, 
-/**
- * Attachments (e.g., images) in the cell.
- */
-attachments: { [key in string]?: { [key in string]?: MultilineString } } | null, };
+export type MarkdownCell = {
+  /**
+   * Identifier of the cell.
+   */
+  id: string;
+  /**
+   * Metadata for the cell.
+   */
+  metadata: CellMetadata;
+  /**
+   * Content of the cell.
+   */
+  source: MultilineString;
+  /**
+   * Attachments (e.g., images) in the cell.
+   */
+  attachments:
+    | { [key in string]?: { [key in string]?: MultilineString } }
+    | null;
+};

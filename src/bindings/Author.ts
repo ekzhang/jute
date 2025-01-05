@@ -3,8 +3,9 @@
 /**
  * Author information for the notebook document.
  */
-export type Author = { 
-/**
- * Name of the author.
- */
-name: string | null, };
+export type Author = {
+  /**
+   * Name of the author.
+   */
+  name: string | null;
+};
