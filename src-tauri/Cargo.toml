@@ -7,6 +7,10 @@ license = "MIT"
 repository = "https://github.com/ekzhang/jute.git"
 edition = "2021"
 
+[[bin]]
+name = "jute"
+path = "src/main.rs"
+
 [dependencies]
 async-channel = "2.2.1"
 bytes = "1.5.0"
