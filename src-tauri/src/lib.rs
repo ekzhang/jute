@@ -39,6 +39,14 @@ pub enum Error {
     /// Error originating from ZeroMQ.
     #[error("zeromq: {0}")]
     Zmq(#[from] zeromq::ZmqError),
+
+    // Error originating from serde_json.
+    #[error("serde_json error: {0}")]
+    SerdeJson(#[from] serde_json::error::Error),
+
+    // Error interacting with the filesystem.
+    #[error("filesystem error: {0}")]
+    Filesystem(#[from] std::io::Error),
 }
 
 impl serde::Serialize for Error {

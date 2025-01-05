@@ -2,13 +2,17 @@
   "identifier": "jute-window",
   "description": "Capability for the Jute webviews",
   "local": true,
-  "windows": ["jute-window-*"],
+  "windows": [
+    "jute-window-*"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-create",
     "core:window:allow-center",
     "core:window:allow-request-user-attention",
     "core:window:allow-start-dragging",
-    "shell:default"
+    "shell:default",
+    "fs:default",
+    "dialog:default"
   ]
 }

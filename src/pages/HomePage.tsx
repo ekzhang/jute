@@ -1,4 +1,7 @@
-import { Link } from "wouter";
+import { open } from '@tauri-apps/plugin-dialog';
+
+import { ArrowRight } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 const sampleNotebookNames = [
   "~/Numpy_starter.ipynb",
@@ -7,6 +10,7 @@ const sampleNotebookNames = [
 ];
 
 export default function HomePage() {
+  const [, navigate] = useLocation();
   return (
     <div className="mt-20 flex flex-col gap-4 px-8 font-light">
       <h1 className="mt-2 text-5xl">Welcome to Jute</h1>
@@ -27,6 +31,14 @@ export default function HomePage() {
           </Link>
         ))}
       </div>
+
+      <button className="w-fit flex items-center gap-2" onClick={async () => {
+        const file = await open({ multiple: false, directory: false });
+        if (file)
+          navigate("/notebook?" + new URLSearchParams({ path: file }));
+      }}>
+        Open a notebook <ArrowRight size="1em" />
+      </button>
     </div>
   );
 }

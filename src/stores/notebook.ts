@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import type { RunCellEvent } from "@/bindings";
+import type { RunCellEvent, Notebook as NotebookType } from "@/bindings";
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
 
@@ -21,6 +21,9 @@ export type NotebookStoreState = {
 
   /** ID of the running kernel, populated after the kernel is started. */
   kernelId?: string;
+
+  /** True when loading the notebook from disk. */
+  isLoading?: boolean;
 };
 
 export type NotebookOutput = {
@@ -73,6 +76,7 @@ export class Notebook {
     this.store = createStore<NotebookStore>()(
       immer<NotebookStore>((set) => ({
         kernelId: undefined,
+        isLoading: true,
         cellIds: [],
         cells: {},
 
@@ -94,6 +98,8 @@ export class Notebook {
     this.refs = new Map();
 
     this.kernelStartPromise = this.startKernel();
+
+    this.loadNotebook();
   }
 
   get state() {
@@ -103,6 +109,23 @@ export class Notebook {
 
   get kernelId() {
     return this.state.kernelId;
+  }
+
+  async loadNotebook() {
+    const notebook = await invoke<NotebookType>("get_notebook", { path: this.path });
+
+    this.state.cellIds = notebook.cells.map((cell) => cell.id);
+
+    this.state.cells = notebook.cells.reduce((acc, cell) => {
+      this.refs.set(cell.id, {});
+      acc[cell.id] = {
+        initialText: typeof cell.source === "string" ? cell.source : cell.source.join("\n"),
+        output: undefined,
+      };
+      return acc;
+    }, this.state.cells);
+
+    this.state.isLoading = false;
   }
 
   async startKernel() {

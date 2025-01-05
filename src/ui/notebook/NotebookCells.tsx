@@ -72,6 +72,15 @@ export default function NotebookCells() {
   const notebook = useNotebook();
   const cellIds = useStore(notebook.store, (state) => state.cellIds);
   const cells = useStore(notebook.store, (state) => state.cells);
+  const isLoading = useStore(notebook.store, (state) => state.isLoading);
+
+  if (isLoading)
+    // TODO: add a better loading state
+    return (
+      <div className="relative p-8 px-14">
+        <div>Loading...</div>
+      </div>
+    );
 
   return (
     <div className="relative py-8">
