@@ -1,9 +1,10 @@
+import { useStore } from "zustand";
+
 import { useNotebook } from "@/stores/notebook";
+import { Error } from "@/ui/shared/Error";
 
 import NotebookCells from "./NotebookCells";
 import NotebookLocation from "./NotebookLocation";
-import { useStore } from "zustand";
-import { Error } from "@/ui/shared/Error";
 
 export default function NotebookView() {
   const notebook = useNotebook();
@@ -18,11 +19,7 @@ export default function NotebookView() {
           filename={notebook.filename}
         />
 
-        {error ? (
-          <Error error={error} />
-        ) : (
-          <NotebookCells />
-        )}
+        {error ? <Error error={error} /> : <NotebookCells />}
       </div>
       <div
         className="border-l border-gray-200 bg-gray-100"

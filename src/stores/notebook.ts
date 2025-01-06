@@ -141,7 +141,8 @@ export class Notebook {
       if (e instanceof Error || typeof e === "string") {
         this.state.error = e.toString();
       } else {
-        this.state.error = "An unknown error occurred while loading the notebook.";
+        this.state.error =
+          "An unknown error occurred while loading the notebook.";
       }
     }
   }
