@@ -24,6 +24,9 @@ export type NotebookStoreState = {
 
   /** True when loading the notebook from disk. */
   isLoading?: boolean;
+
+  /** Error related to the notebook. */
+  error?: string;
 };
 
 export type NotebookOutput = {
@@ -112,25 +115,35 @@ export class Notebook {
   }
 
   async loadNotebook() {
-    const notebook = await invoke<NotebookType>("get_notebook", {
-      path: this.path,
-    });
+    try {
+      const notebook = await invoke<NotebookType>("get_notebook", {
+        path: this.path,
+      });
 
-    this.state.cellIds = notebook.cells.map((cell) => cell.id);
+      this.state.cellIds = notebook.cells.map((cell) => cell.id);
 
-    this.state.cells = notebook.cells.reduce((acc, cell) => {
-      this.refs.set(cell.id, {});
-      acc[cell.id] = {
-        initialText:
-          typeof cell.source === "string"
-            ? cell.source
-            : cell.source.join("\n"),
-        output: undefined,
-      };
-      return acc;
-    }, this.state.cells);
+      this.state.cells = notebook.cells.reduce((acc, cell) => {
+        this.refs.set(cell.id, {});
+        acc[cell.id] = {
+          initialText:
+            typeof cell.source === "string"
+              ? cell.source
+              : cell.source.join("\n"),
+          output: undefined,
+        };
+        return acc;
+      }, this.state.cells);
 
-    this.state.isLoading = false;
+      this.state.isLoading = false;
+    } catch (e: unknown) {
+      this.state.isLoading = false;
+
+      if (e instanceof Error || typeof e === "string") {
+        this.state.error = e.toString();
+      } else {
+        this.state.error = "An unknown error occurred while loading the notebook.";
+      }
+    }
   }
 
   async startKernel() {
