@@ -7,6 +7,7 @@ use jute::{
     backend::{
         commands::{self, RunCellEvent},
         local::{environment, LocalKernel},
+        notebook::Notebook,
     },
     state::State,
     Error,
@@ -73,6 +74,15 @@ async fn stop_kernel(kernel_id: &str, state: tauri::State<'_, State>) -> Result<
         .ok_or(Error::KernelDisconnect)?;
     kernel.kill().await?;
     Ok(())
+}
+
+#[tauri::command]
+async fn get_notebook(path: &str) -> Result<Notebook, Error> {
+    info!("getting notebook at {path}");
+
+    let notebook = Notebook::load_from_path(path)?;
+
+    Ok(notebook)
 }
 
 #[tauri::command]
@@ -160,7 +170,9 @@ fn main() {
     tracing_subscriber::fmt().init();
 
     #[allow(unused_mut)]
-    let mut app = tauri::Builder::default();
+    let mut app = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init());
 
     #[cfg(target_os = "macos")]
     {
@@ -174,6 +186,7 @@ fn main() {
             start_kernel,
             stop_kernel,
             run_cell,
+            get_notebook,
         ])
         .setup(|app| {
             // Parse files that were opened via CLI arguments (Windows + Linux).

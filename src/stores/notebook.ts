@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import type { RunCellEvent } from "@/bindings";
+import type { Notebook as NotebookType, RunCellEvent } from "@/bindings";
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
 
@@ -21,6 +21,12 @@ export type NotebookStoreState = {
 
   /** ID of the running kernel, populated after the kernel is started. */
   kernelId?: string;
+
+  /** True when loading the notebook from disk. */
+  isLoading?: boolean;
+
+  /** Error related to the notebook. */
+  error?: string;
 };
 
 export type NotebookOutput = {
@@ -37,6 +43,9 @@ export type NotebookOutput = {
 type NotebookStoreActions = {
   addCell: (id: string, initialText: string) => void;
   setOutput: (cellId: string, output: NotebookOutput | undefined) => void;
+  loadNotebook: (notebook: NotebookType) => void;
+  setError: (error: string) => void;
+  setIsLoading: (isLoading: boolean) => void;
 };
 
 type CellHandle = {
@@ -73,6 +82,7 @@ export class Notebook {
     this.store = createStore<NotebookStore>()(
       immer<NotebookStore>((set) => ({
         kernelId: undefined,
+        isLoading: true,
         cellIds: [],
         cells: {},
 
@@ -88,12 +98,41 @@ export class Notebook {
           set((state) => {
             state.cells[cellId].output = output;
           }),
+
+        loadNotebook: (notebook) =>
+          set((state) => {
+            state.cellIds = notebook.cells.map((cell) => cell.id);
+            state.cells = notebook.cells.reduce((acc, cell) => {
+              acc[cell.id] = {
+                initialText:
+                  typeof cell.source === "string"
+                    ? cell.source
+                    : cell.source.join("\n"),
+                output: undefined,
+              };
+              return acc;
+            }, state.cells);
+            state.isLoading = false;
+            return state;
+          }),
+
+        setError: (error) =>
+          set((state) => {
+            state.error = error;
+          }),
+
+        setIsLoading: (isLoading) =>
+          set((state) => {
+            state.isLoading = isLoading;
+          }),
       })),
     );
 
     this.refs = new Map();
 
     this.kernelStartPromise = this.startKernel();
+
+    this.loadNotebook();
   }
 
   get state() {
@@ -103,6 +142,30 @@ export class Notebook {
 
   get kernelId() {
     return this.state.kernelId;
+  }
+
+  async loadNotebook() {
+    try {
+      const notebook = await invoke<NotebookType>("get_notebook", {
+        path: this.path,
+      });
+
+      this.state.loadNotebook(notebook);
+      this.refs = notebook.cells.reduce((acc, cell) => {
+        acc.set(cell.id, {});
+        return acc;
+      }, this.refs);
+    } catch (e: unknown) {
+      this.state.setIsLoading(false);
+
+      if (e instanceof Error || typeof e === "string") {
+        this.state.setError(e.toString());
+      } else {
+        this.state.setError(
+          "An unknown error occurred while loading the notebook.",
+        );
+      }
+    }
   }
 
   async startKernel() {
