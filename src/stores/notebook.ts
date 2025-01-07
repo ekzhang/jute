@@ -81,7 +81,7 @@ function createNotebookStore(): StoreApi<NotebookStore> {
               initialText:
                 typeof cell.source === "string"
                   ? cell.source
-                  : cell.source.join("\n"),
+                  : cell.source.join(""),
               output: undefined,
             };
             return acc;
