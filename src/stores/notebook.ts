@@ -43,6 +43,9 @@ export type NotebookOutput = {
 type NotebookStoreActions = {
   addCell: (id: string, initialText: string) => void;
   setOutput: (cellId: string, output: NotebookOutput | undefined) => void;
+  loadNotebook: (notebook: NotebookType) => void;
+  setError: (error: string) => void;
+  setIsLoading: (isLoading: boolean) => void;
 };
 
 type CellHandle = {
@@ -95,6 +98,34 @@ export class Notebook {
           set((state) => {
             state.cells[cellId].output = output;
           }),
+
+        loadNotebook: (notebook) =>
+          set((state) => {
+            state.cellIds = notebook.cells.map((cell) => cell.id);
+            state.cells = notebook.cells.reduce((acc, cell) => {
+              this.refs.set(cell.id, {});
+              acc[cell.id] = {
+                initialText:
+                  typeof cell.source === "string"
+                    ? cell.source
+                    : cell.source.join("\n"),
+                output: undefined,
+              };
+              return acc;
+            }, state.cells);
+            state.isLoading = false;
+            return state;
+          }),
+
+        setError: (error) =>
+          set((state) => {
+            state.error = error;
+          }),
+
+        setIsLoading: (isLoading) =>
+          set((state) => {
+            state.isLoading = isLoading;
+          }),
       })),
     );
 
@@ -120,29 +151,14 @@ export class Notebook {
         path: this.path,
       });
 
-      this.state.cellIds = notebook.cells.map((cell) => cell.id);
-
-      this.state.cells = notebook.cells.reduce((acc, cell) => {
-        this.refs.set(cell.id, {});
-        acc[cell.id] = {
-          initialText:
-            typeof cell.source === "string"
-              ? cell.source
-              : cell.source.join("\n"),
-          output: undefined,
-        };
-        return acc;
-      }, this.state.cells);
-
-      this.state.isLoading = false;
+      this.state.loadNotebook(notebook);
     } catch (e: unknown) {
-      this.state.isLoading = false;
+      this.state.setIsLoading(false);
 
       if (e instanceof Error || typeof e === "string") {
-        this.state.error = e.toString();
+        this.state.setError(e.toString());
       } else {
-        this.state.error =
-          "An unknown error occurred while loading the notebook.";
+        this.state.setError("An unknown error occurred while loading the notebook.");
       }
     }
   }
