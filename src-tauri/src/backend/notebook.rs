@@ -204,7 +204,7 @@ impl From<MultilineString> for String {
         match m {
             MultilineString::Single(s) => s,
             MultilineString::Multi(v) if v.len() == 1 => v.into_iter().next().unwrap(),
-            MultilineString::Multi(v) => v.join("\n"),
+            MultilineString::Multi(v) => v.join(""),
         }
     }
 }
