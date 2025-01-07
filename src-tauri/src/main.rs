@@ -80,9 +80,10 @@ async fn stop_kernel(kernel_id: &str, state: tauri::State<'_, State>) -> Result<
 async fn get_notebook(path: &str) -> Result<Notebook, Error> {
     info!("getting notebook at {path}");
 
-    let notebook = Notebook::load_from_path(path)?;
-
-    Ok(notebook)
+    let contents = tokio::fs::read_to_string(path)
+        .await
+        .map_err(Error::Filesystem)?;
+    Ok(serde_json::from_str(&contents)?)
 }
 
 #[tauri::command]
