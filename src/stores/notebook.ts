@@ -10,8 +10,12 @@ import type { Notebook as NotebookType, RunCellEvent } from "@/bindings";
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
 
+/** Zustand reactive data used by the UI to render notebooks. */
 export type NotebookStoreState = {
+  /** A list of cell IDs in order. */
   cellIds: string[];
+
+  /** Information about each cell, keyed by ID. */
   cells: {
     [cellId: string]: {
       initialText: string;
@@ -19,11 +23,11 @@ export type NotebookStoreState = {
     };
   };
 
+  /** True when loading the notebook from disk. */
+  isLoading: boolean;
+
   /** ID of the running kernel, populated after the kernel is started. */
   kernelId?: string;
-
-  /** True when loading the notebook from disk. */
-  isLoading?: boolean;
 
   /** Error related to the notebook. */
   error?: string;
@@ -48,10 +52,70 @@ type NotebookStoreActions = {
   setIsLoading: (isLoading: boolean) => void;
 };
 
+/** Initialize the Zustand store for a notebook and define mutators. */
+function createNotebookStore(): StoreApi<NotebookStore> {
+  return createStore<NotebookStore>()(
+    immer<NotebookStore>((set) => ({
+      cellIds: [],
+      cells: {},
+      isLoading: true,
+
+      addCell: (cellId, initialText) =>
+        set((state) => {
+          state.cellIds.push(cellId);
+          state.cells[cellId] = {
+            initialText,
+          };
+        }),
+
+      setOutput: (cellId, output) =>
+        set((state) => {
+          state.cells[cellId].output = output;
+        }),
+
+      loadNotebook: (notebook) =>
+        set((state) => {
+          state.cellIds = notebook.cells.map((cell) => cell.id);
+          state.cells = notebook.cells.reduce((acc, cell) => {
+            acc[cell.id] = {
+              initialText:
+                typeof cell.source === "string"
+                  ? cell.source
+                  : cell.source.join("\n"),
+              output: undefined,
+            };
+            return acc;
+          }, state.cells);
+          state.isLoading = false;
+        }),
+
+      setError: (error) =>
+        set((state) => {
+          state.error = error;
+        }),
+
+      setIsLoading: (isLoading) =>
+        set((state) => {
+          state.isLoading = isLoading;
+        }),
+    })),
+  );
+}
+
 type CellHandle = {
   editor?: EditorView;
 };
 
+/**
+ * Centralized stateful object representing a notebook.
+ *
+ * The Notebook class is responsible for communicating with a running Jupyter
+ * kernel and handling edits to notebooks. It also manages the Zustand state
+ * for rendering a notebook in the UI.
+ *
+ * Generally, all user actions will go through methods on this class, which may
+ * dispatch to Zustand. The UI subscribes to Zustand for updates.
+ */
 export class Notebook {
   /** Promise that resolves when the kernel is started. */
   kernelStartPromise: Promise<void>;
@@ -79,59 +143,10 @@ export class Notebook {
     this.filename = parts.pop()!;
     this.directory = parts.join("/");
 
-    this.store = createStore<NotebookStore>()(
-      immer<NotebookStore>((set) => ({
-        kernelId: undefined,
-        isLoading: true,
-        cellIds: [],
-        cells: {},
-
-        addCell: (cellId, initialText) =>
-          set((state) => {
-            state.cellIds.push(cellId);
-            state.cells[cellId] = {
-              initialText,
-            };
-          }),
-
-        setOutput: (cellId, output) =>
-          set((state) => {
-            state.cells[cellId].output = output;
-          }),
-
-        loadNotebook: (notebook) =>
-          set((state) => {
-            state.cellIds = notebook.cells.map((cell) => cell.id);
-            state.cells = notebook.cells.reduce((acc, cell) => {
-              acc[cell.id] = {
-                initialText:
-                  typeof cell.source === "string"
-                    ? cell.source
-                    : cell.source.join("\n"),
-                output: undefined,
-              };
-              return acc;
-            }, state.cells);
-            state.isLoading = false;
-            return state;
-          }),
-
-        setError: (error) =>
-          set((state) => {
-            state.error = error;
-          }),
-
-        setIsLoading: (isLoading) =>
-          set((state) => {
-            state.isLoading = isLoading;
-          }),
-      })),
-    );
-
+    this.store = createNotebookStore();
     this.refs = new Map();
 
     this.kernelStartPromise = this.startKernel();
-
     this.loadNotebook();
   }
 

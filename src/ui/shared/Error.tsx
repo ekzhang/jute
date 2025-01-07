@@ -10,9 +10,7 @@ export function Error(props: Props) {
     <div className="flex h-full w-full flex-col items-center justify-center gap-2">
       <h3 className="text-3xl">An error occured.</h3>
 
-      <div className="text-l">
-        {props.error || "An unknown error occurred."}
-      </div>
+      <p className="text-lg">{props.error || "An unknown error occurred."}</p>
 
       <Link to="/">
         <button className="mt-4 flex items-center gap-2">
