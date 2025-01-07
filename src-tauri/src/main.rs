@@ -7,7 +7,7 @@ use jute::{
     backend::{
         commands::{self, RunCellEvent},
         local::{environment, LocalKernel},
-        notebook::Notebook,
+        notebook::NotebookRoot,
     },
     state::State,
     Error,
@@ -77,7 +77,7 @@ async fn stop_kernel(kernel_id: &str, state: tauri::State<'_, State>) -> Result<
 }
 
 #[tauri::command]
-async fn get_notebook(path: &str) -> Result<Notebook, Error> {
+async fn get_notebook(path: &str) -> Result<NotebookRoot, Error> {
     info!("getting notebook at {path}");
 
     let contents = tokio::fs::read_to_string(path)

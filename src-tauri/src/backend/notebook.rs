@@ -13,7 +13,7 @@ use ts_rs::TS;
 
 /// Represents the root structure of a Jupyter Notebook file.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
-pub struct Notebook {
+pub struct NotebookRoot {
     /// Root-level metadata of the notebook.
     pub metadata: NotebookMetadata,
 
@@ -360,7 +360,7 @@ mod tests {
             }
         "#;
 
-        let notebook: Notebook = serde_json::from_str(json).unwrap();
+        let notebook: NotebookRoot = serde_json::from_str(json).unwrap();
         assert_eq!(
             notebook.metadata.kernelspec.as_ref().unwrap().name,
             "python3"

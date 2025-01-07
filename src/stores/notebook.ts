@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import type { Notebook as NotebookType, RunCellEvent } from "@/bindings";
+import type { NotebookRoot, RunCellEvent } from "@/bindings";
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
 
@@ -47,7 +47,7 @@ export type NotebookOutput = {
 type NotebookStoreActions = {
   addCell: (id: string, initialText: string) => void;
   setOutput: (cellId: string, output: NotebookOutput | undefined) => void;
-  loadNotebook: (notebook: NotebookType) => void;
+  loadNotebook: (notebook: NotebookRoot) => void;
   setError: (error: string) => void;
   setIsLoading: (isLoading: boolean) => void;
 };
@@ -161,7 +161,7 @@ export class Notebook {
 
   async loadNotebook() {
     try {
-      const notebook = await invoke<NotebookType>("get_notebook", {
+      const notebook = await invoke<NotebookRoot>("get_notebook", {
         path: this.path,
       });
 

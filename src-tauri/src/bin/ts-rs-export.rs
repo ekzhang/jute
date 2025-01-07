@@ -4,7 +4,7 @@ use std::{
     process::{exit, Command},
 };
 
-use jute::backend::{commands::RunCellEvent, notebook::Notebook};
+use jute::backend::{commands::RunCellEvent, notebook::NotebookRoot};
 use ts_rs::TS;
 
 fn main() {
@@ -27,7 +27,7 @@ fn main() {
     // Generate TypeScript bindings
     println!("Exporting TypeScript bindings...");
 
-    Notebook::export_all_to(export_path).unwrap();
+    NotebookRoot::export_all_to(export_path).unwrap();
     RunCellEvent::export_all_to(export_path).unwrap();
 
     // Generate `index.ts` file

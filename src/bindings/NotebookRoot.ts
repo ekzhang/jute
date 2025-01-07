@@ -5,7 +5,7 @@ import type { NotebookMetadata } from "./NotebookMetadata";
 /**
  * Represents the root structure of a Jupyter Notebook file.
  */
-export type Notebook = {
+export type NotebookRoot = {
   /**
    * Root-level metadata of the notebook.
    */
