@@ -37,7 +37,8 @@ impl Notebook {
 
     /// Loads a notebook from a file path.
     pub fn load_from_path(path: &str) -> Result<Self, crate::Error> {
-        let s = std::fs::read_to_string(path)?;
+        let s = std::fs::read_to_string(path).map_err(crate::Error::Filesystem)?;
+
         Self::load_from_str(&s)
     }
 }

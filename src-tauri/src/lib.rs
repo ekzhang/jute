@@ -46,7 +46,7 @@ pub enum Error {
 
     /// Error interacting with the filesystem.
     #[error("filesystem error: {0}")]
-    Filesystem(#[from] std::io::Error),
+    Filesystem(io::Error),
 }
 
 impl serde::Serialize for Error {

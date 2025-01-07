@@ -103,7 +103,6 @@ export class Notebook {
           set((state) => {
             state.cellIds = notebook.cells.map((cell) => cell.id);
             state.cells = notebook.cells.reduce((acc, cell) => {
-              this.refs.set(cell.id, {});
               acc[cell.id] = {
                 initialText:
                   typeof cell.source === "string"
@@ -152,13 +151,19 @@ export class Notebook {
       });
 
       this.state.loadNotebook(notebook);
+      this.refs = notebook.cells.reduce((acc, cell) => {
+        acc.set(cell.id, {});
+        return acc;
+      }, this.refs);
     } catch (e: unknown) {
       this.state.setIsLoading(false);
 
       if (e instanceof Error || typeof e === "string") {
         this.state.setError(e.toString());
       } else {
-        this.state.setError("An unknown error occurred while loading the notebook.");
+        this.state.setError(
+          "An unknown error occurred while loading the notebook.",
+        );
       }
     }
   }
