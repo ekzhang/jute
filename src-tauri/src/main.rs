@@ -13,7 +13,9 @@ use jute::{
     Error,
 };
 use sysinfo::System;
-use tauri::{ipc::Channel, AppHandle, Manager};
+#[allow(unused_imports)]
+use tauri::Manager;
+use tauri::{ipc::Channel, AppHandle};
 use tracing::info;
 
 #[tauri::command]
