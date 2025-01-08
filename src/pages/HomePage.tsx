@@ -34,7 +34,11 @@ export default function HomePage() {
       <button
         className="flex w-fit items-center gap-2"
         onClick={async () => {
-          const file = await open({ multiple: false, directory: false });
+          const file = await open({
+            multiple: false,
+            directory: false,
+            filters: [{ name: "Jupyter Notebook", extensions: ["ipynb"] }],
+          });
           if (file)
             navigate("/notebook?" + new URLSearchParams({ path: file }));
         }}
