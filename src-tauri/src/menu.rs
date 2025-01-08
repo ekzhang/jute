@@ -98,6 +98,7 @@ pub fn setup_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         ..Default::default()
     };
 
+    #[allow(unused_mut)]
     let mut menu = MenuBuilder::new(app);
 
     // App name submenu, only for macOS ("Jute").
