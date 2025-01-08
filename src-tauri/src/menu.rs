@@ -52,7 +52,7 @@ pub enum MenuEvent {
 pub fn setup_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     app.on_menu_event(move |app, event| {
         let Ok(event) = event.id().as_ref().parse::<MenuEvent>() else {
-            warn!("Unknown menu event: {:?}", event.id());
+            warn!("unknown menu event: {:?}", event.id());
             return;
         };
         match event {
@@ -167,7 +167,7 @@ pub fn setup_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let help_menu = SubmenuBuilder::with_id(app, HELP_SUBMENU_ID, "Help")
         .items(&[
             #[cfg(not(target_os = "macos"))]
-            PredefinedMenuItem::about(app, None, Some(about_metadata))?,
+            &PredefinedMenuItem::about(app, None, Some(about_metadata))?,
         ])
         .text(MenuEvent::ReportIssue, "Report Issue")
         .build()?;
