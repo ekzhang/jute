@@ -13,9 +13,8 @@ use jute::{
     Error,
 };
 use sysinfo::System;
-use tauri::{ipc::Channel, AppHandle, Manager, Runtime, WebviewWindowBuilder};
+use tauri::{ipc::Channel, AppHandle, Manager};
 use tracing::info;
-use uuid::Uuid;
 
 #[tauri::command]
 async fn cpu_usage() -> f32 {
@@ -109,35 +108,6 @@ async fn run_cell(
     Ok(())
 }
 
-/// Initializes window size, min width, and other common settings on the
-/// builder.
-fn initialize_window_builder<'a, R: Runtime, M: Manager<R>>(
-    manager: &'a M,
-    path: &str,
-) -> WebviewWindowBuilder<'a, R, M> {
-    // Generate a unique window label since duplicates are not allowed.
-    let label = format!("jute-window-{}", Uuid::new_v4());
-
-    let url = tauri::WebviewUrl::App(path.trim_start_matches('/').into());
-
-    #[allow(unused_mut)]
-    let mut builder = WebviewWindowBuilder::new(manager, &label, url)
-        .title("Jute")
-        .inner_size(960.0, 800.0)
-        .min_inner_size(720.0, 600.0)
-        .fullscreen(false)
-        .resizable(true);
-
-    #[cfg(target_os = "macos")]
-    {
-        // These methods are only available on macOS.
-        builder = builder.title_bar_style(tauri::TitleBarStyle::Overlay);
-        builder = builder.hidden_title(true);
-    }
-
-    builder
-}
-
 /// Handle file associations opened in the application.
 ///
 /// Jute registers itself as an application to open `.ipynb` files, which are
@@ -160,10 +130,8 @@ fn handle_file_associations(
     files: &[PathBuf],
 ) -> Result<(), Box<dyn std::error::Error>> {
     for file in files {
-        let query = serde_urlencoded::to_string([("path", file.to_string_lossy())])?;
-        initialize_window_builder(app, &format!("/notebook?{query}")).build()?;
+        jute::window::open_notebook_path(app, file)?;
     }
-
     Ok(())
 }
 
@@ -171,9 +139,7 @@ fn main() {
     tracing_subscriber::fmt().init();
 
     #[allow(unused_mut)]
-    let mut app = tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_fs::init());
+    let mut app = tauri::Builder::default();
 
     #[cfg(target_os = "macos")]
     {
@@ -181,6 +147,9 @@ fn main() {
     }
 
     app.manage(State::new())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             cpu_usage,
@@ -214,7 +183,7 @@ fn main() {
                 if files.is_empty() {
                     // Open a default window if no files were provided (this is if you opened the
                     // app in the launcher, for instance).
-                    initialize_window_builder(app, "/").build()?;
+                    jute::window::open_home(app.handle())?;
                 } else {
                     handle_file_associations(app.handle(), &files)?;
                 }
@@ -222,6 +191,7 @@ fn main() {
 
             Ok(())
         })
+        .menu(jute::menu::setup_menu)
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(
@@ -240,7 +210,7 @@ fn main() {
                     tauri::RunEvent::Ready => {
                         // If no files were opened, open a default window.
                         if app.webview_windows().is_empty() {
-                            initialize_window_builder(app, "/").build().unwrap();
+                            jute::window::open_home(app).unwrap();
                         }
                     }
                     _ => {}

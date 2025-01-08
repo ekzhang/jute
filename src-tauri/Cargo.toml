@@ -12,6 +12,7 @@ name = "jute"
 path = "src/main.rs"
 
 [dependencies]
+anyhow = "1.0.95"
 async-channel = "2.2.1"
 bytes = "1.5.0"
 cfg-if = "1.0.0"
@@ -24,10 +25,12 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_urlencoded = "0.7.1"
 sha2 = "0.10.8"
+strum = { version = "0.26.3", features = ["derive"] }
 sysinfo = "0.30.3"
 tauri = { version = "2.0.4", features = ["devtools", "macos-private-api"] }
 tauri-plugin-dialog = "2.2.0"
 tauri-plugin-fs = "2.2.0"
+tauri-plugin-opener = "2.2.3"
 tauri-plugin-shell = "2.2.0"
 thiserror = "1.0.57"
 time = { version = "0.3.36", features = ["serde", "serde-human-readable"] }

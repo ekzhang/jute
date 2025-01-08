@@ -6,8 +6,10 @@
 use std::io;
 
 pub mod backend;
+pub mod menu;
 pub mod plugins;
 pub mod state;
+pub mod window;
 
 /// A serializable error type for application errors.
 #[derive(Debug, thiserror::Error)]

@@ -24,6 +24,7 @@
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-fs": "^2.2.0",
+    "@tauri-apps/plugin-opener": "^2.2.3",
     "clsx": "^2.1.1",
     "html-entities": "^2.5.2",
     "immer": "^10.1.1",
