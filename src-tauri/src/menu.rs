@@ -60,7 +60,7 @@ pub fn setup_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
                 let app = app.clone();
                 app.dialog()
                     .file()
-                    .add_filter("Jupyter Notebook", &[".ipynb"])
+                    .add_filter("Jupyter Notebook", &["ipynb"])
                     .pick_file(move |path| {
                         if let Some(path) = path {
                             match path.into_path() {
