@@ -13,7 +13,7 @@ use jute::{
     Error,
 };
 use sysinfo::System;
-use tauri::{ipc::Channel, AppHandle, Manager};
+use tauri::{ipc::Channel, AppHandle, Manager as _};
 use tracing::info;
 
 #[tauri::command]
