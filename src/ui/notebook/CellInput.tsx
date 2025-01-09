@@ -76,6 +76,7 @@ const editorTheme = EditorView.theme({
 });
 
 const language = new Compartment();
+const lineNumbersDynamic = new Compartment();
 
 /**
  * Cell input for a notebook. Note that this component requires CodeMirror, so
@@ -109,8 +110,7 @@ export default function CellInput({ cellId }: Props) {
         autocompletion(),
         rectangularSelection(),
         crosshairCursor(),
-        // TODO: Figure out state dataflow for cumulative line numbers.
-        lineNumbers({ formatNumber: (x) => String(x + 0) }),
+
         keymap.of([
           ...closeBracketsKeymap,
           ...defaultKeymap,
@@ -140,6 +140,12 @@ export default function CellInput({ cellId }: Props) {
           ]),
         ),
 
+        // TODO: Figure out state dataflow for cumulative line numbers.
+        lineNumbersDynamic.of(
+          type === "code"
+            ? lineNumbers({ formatNumber: (x) => String(x + 0) })
+            : lineNumbers({ formatNumber: () => "" }),
+        ),
         language.of(type === "code" ? python() : markdown()),
         indentUnit.of("    "),
         EditorState.tabSize.of(4),
@@ -164,7 +170,14 @@ export default function CellInput({ cellId }: Props) {
   useEffect(() => {
     if (view) {
       view.dispatch({
-        effects: language.reconfigure(type === "code" ? python() : markdown()),
+        effects: [
+          language.reconfigure(type === "code" ? python() : markdown()),
+          lineNumbersDynamic.reconfigure(
+            type === "code"
+              ? lineNumbers({ formatNumber: (x) => String(x + 0) })
+              : lineNumbers({ formatNumber: () => "" }),
+          ),
+        ],
       });
     }
   }, [view, type]);
