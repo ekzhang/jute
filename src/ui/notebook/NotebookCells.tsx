@@ -50,7 +50,12 @@ function CellInputAside({ cellId }: { cellId: string }) {
   return (
     <Aside>
       <div className="mt-1 flex gap-0.5">
-        <AsideIconButton Icon={type === "code" ? Code2Icon : LetterTextIcon} />
+        <AsideIconButton
+          Icon={type === "code" ? Code2Icon : LetterTextIcon}
+          onClick={() => {
+            notebook.setCellType(cellId, type === "code" ? "markdown" : "code");
+          }}
+        />
         {type === "code" && <AsideIconButton Icon={RouteOffIcon} />}
         <AsideIconButton Icon={BoltIcon} />
       </div>

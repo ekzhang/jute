@@ -54,6 +54,9 @@ type NotebookStoreActions = {
   /** Add a new cell to the notebook. */
   addCell: (id: string, type: CellType, initialText: string) => void;
 
+  /** Set the type of a cell. */
+  setCellType: (id: string, type: CellType) => void;
+
   /** Set the output of a cell after it runs. */
   setOutput: (cellId: string, output: NotebookOutput | undefined) => void;
 
@@ -91,6 +94,11 @@ function createNotebookStore(): StoreApi<NotebookStore> {
             type,
             initialText,
           };
+        }),
+
+      setCellType: (cellId, type) =>
+        set((state) => {
+          state.cells[cellId].type = type;
         }),
 
       setOutput: (cellId, output) =>
@@ -210,6 +218,10 @@ export class Notebook {
     this.refs.set(cellId, {});
     this.store.getState().addCell(cellId, type, initialText);
     return cellId;
+  }
+
+  setCellType(cellId: string, type: CellType) {
+    this.store.getState().setCellType(cellId, type);
   }
 
   clearOutput(cellId: string) {
