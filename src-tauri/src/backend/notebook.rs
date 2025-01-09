@@ -32,18 +32,23 @@ pub struct NotebookRoot {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct NotebookMetadata {
     /// Kernel information.
+    #[ts(optional)]
     pub kernelspec: Option<KernelSpec>,
 
     /// Programming language information.
+    #[ts(optional)]
     pub language_info: Option<LanguageInfo>,
 
     /// Original notebook format before conversion.
+    #[ts(optional)]
     pub orig_nbformat: Option<u8>,
 
     /// Title of the notebook document.
+    #[ts(optional)]
     pub title: Option<String>,
 
     /// Authors of the notebook document.
+    #[ts(optional)]
     pub authors: Option<Vec<Author>>,
 
     /// Additional unrecognized attributes in metadata.
@@ -60,6 +65,11 @@ pub struct KernelSpec {
 
     /// Display name of the kernel.
     pub display_name: String,
+
+    /// Additional unrecognized attributes in kernel specification.
+    #[serde(flatten)]
+    #[ts(skip)]
+    pub other: Map<String, Value>,
 }
 
 /// Programming language information.
@@ -69,15 +79,19 @@ pub struct LanguageInfo {
     pub name: String,
 
     /// CodeMirror mode to use for the language.
+    #[ts(optional)]
     pub codemirror_mode: Option<CodeMirrorMode>,
 
     /// File extension for files in this language.
+    #[ts(optional)]
     pub file_extension: Option<String>,
 
     /// MIME type for files in this language.
+    #[ts(optional)]
     pub mimetype: Option<String>,
 
     /// Pygments lexer for syntax highlighting.
+    #[ts(optional)]
     pub pygments_lexer: Option<String>,
 
     /// Additional unrecognized attributes in language information.
@@ -100,6 +114,7 @@ pub enum CodeMirrorMode {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct Author {
     /// Name of the author.
+    #[ts(optional)]
     pub name: Option<String>,
 
     /// Additional unrecognized attributes for authors.
@@ -126,7 +141,8 @@ pub enum Cell {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct RawCell {
     /// Identifier of the cell.
-    pub id: String,
+    #[ts(optional)]
+    pub id: Option<String>,
 
     /// Metadata for the cell.
     pub metadata: CellMetadata,
@@ -135,6 +151,7 @@ pub struct RawCell {
     pub source: MultilineString,
 
     /// Attachments (e.g., images) in the cell.
+    #[ts(optional)]
     pub attachments: Option<CellAttachments>,
 }
 
@@ -142,7 +159,8 @@ pub struct RawCell {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct MarkdownCell {
     /// Identifier of the cell.
-    pub id: String,
+    #[ts(optional)]
+    pub id: Option<String>,
 
     /// Metadata for the cell.
     pub metadata: CellMetadata,
@@ -151,6 +169,7 @@ pub struct MarkdownCell {
     pub source: MultilineString,
 
     /// Attachments (e.g., images) in the cell.
+    #[ts(optional)]
     pub attachments: Option<CellAttachments>,
 }
 
@@ -158,7 +177,8 @@ pub struct MarkdownCell {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct CodeCell {
     /// Identifier of the cell.
-    pub id: String,
+    #[ts(optional)]
+    pub id: Option<String>,
 
     /// Metadata for the cell.
     pub metadata: CellMetadata,

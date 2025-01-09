@@ -2,7 +2,7 @@ import { FolderOpenIcon } from "lucide-react";
 
 type Props = {
   directory: string;
-  filename: string;
+  filename: string | null;
 };
 
 export default function NotebookLocation({ directory, filename }: Props) {
@@ -17,7 +17,10 @@ export default function NotebookLocation({ directory, filename }: Props) {
 
   let basename: string;
   let extension: string;
-  if (filename.includes(".")) {
+  if (!filename) {
+    basename = "Untitled notebook";
+    extension = "";
+  } else if (filename.includes(".")) {
     const parts = filename.split(".");
     extension = parts.pop()!;
     basename = parts.join(".");

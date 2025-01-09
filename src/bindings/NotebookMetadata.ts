@@ -10,21 +10,21 @@ export type NotebookMetadata = {
   /**
    * Kernel information.
    */
-  kernelspec: KernelSpec | null;
+  kernelspec?: KernelSpec;
   /**
    * Programming language information.
    */
-  language_info: LanguageInfo | null;
+  language_info?: LanguageInfo;
   /**
    * Original notebook format before conversion.
    */
-  orig_nbformat: number | null;
+  orig_nbformat?: number;
   /**
    * Title of the notebook document.
    */
-  title: string | null;
+  title?: string;
   /**
    * Authors of the notebook document.
    */
-  authors: Array<Author> | null;
+  authors?: Array<Author>;
 };

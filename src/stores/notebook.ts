@@ -26,11 +26,14 @@ export type NotebookStoreState = {
   /** True when loading the notebook from disk. */
   isLoading: boolean;
 
+  /** Error related to loading the notebook. */
+  loadError?: string;
+
+  /** Path to the notebook file, if saved to a file path. */
+  path?: string;
+
   /** ID of the running kernel, populated after the kernel is started. */
   kernelId?: string;
-
-  /** Error related to the notebook. */
-  error?: string;
 };
 
 export type NotebookOutput = {
@@ -45,11 +48,29 @@ export type NotebookOutput = {
 
 /** Actions are kept private, only to be used from the `Notebook` class. */
 type NotebookStoreActions = {
+  /** Add a new cell to the notebook. */
   addCell: (id: string, initialText: string) => void;
+
+  /** Set the output of a cell after it runs. */
   setOutput: (cellId: string, output: NotebookOutput | undefined) => void;
+
+  /**
+   * Start loading the notebook from an external source.
+   *
+   * After this function is called, no new cell executions should happen until
+   * the notebook finishes loading and one of the functions below is called. If
+   * successful, this clears the current cells.
+   */
+  startLoading: () => void;
+
+  /** Load the notebook from a JSON object. */
   loadNotebook: (notebook: NotebookRoot) => void;
-  setError: (error: string) => void;
-  setIsLoading: (isLoading: boolean) => void;
+
+  /** Set the error on failure to load a notebook. */
+  setLoadError: (error: string) => void;
+
+  /** Set the path of the notebook, when it is opened or saved. */
+  setPath: (path: string) => void;
 };
 
 /** Initialize the Zustand store for a notebook and define mutators. */
@@ -58,7 +79,7 @@ function createNotebookStore(): StoreApi<NotebookStore> {
     immer<NotebookStore>((set) => ({
       cellIds: [],
       cells: {},
-      isLoading: true,
+      isLoading: false,
 
       addCell: (cellId, initialText) =>
         set((state) => {
@@ -73,30 +94,37 @@ function createNotebookStore(): StoreApi<NotebookStore> {
           state.cells[cellId].output = output;
         }),
 
+      startLoading: () =>
+        set((state) => {
+          // TODO: Fix this to handle errors better.
+          if (state.isLoading) throw new Error("Notebook is already loading");
+          state.isLoading = true;
+        }),
+
       loadNotebook: (notebook) =>
         set((state) => {
-          state.cellIds = notebook.cells.map((cell) => cell.id);
-          state.cells = notebook.cells.reduce((acc, cell) => {
-            acc[cell.id] = {
-              initialText:
-                typeof cell.source === "string"
-                  ? cell.source
-                  : cell.source.join(""),
-              output: undefined,
-            };
-            return acc;
-          }, state.cells);
+          // Some older notebooks have no cell IDs, so we generate them on import.
+          const cellIds = notebook.cells.map((cell) => cell.id ?? uuidv4());
+          state.cellIds = cellIds;
+          state.cells = Object.fromEntries(
+            notebook.cells.map((cell, i) => [
+              cellIds[i],
+              { initialText: multiline(cell.source) },
+            ]),
+          );
+          state.isLoading = false;
+          state.loadError = undefined;
+        }),
+
+      setLoadError: (error) =>
+        set((state) => {
+          state.loadError = error;
           state.isLoading = false;
         }),
 
-      setError: (error) =>
+      setPath: (path) =>
         set((state) => {
-          state.error = error;
-        }),
-
-      setIsLoading: (isLoading) =>
-        set((state) => {
-          state.isLoading = isLoading;
+          state.path = path;
         }),
     })),
   );
@@ -126,68 +154,44 @@ export class Notebook {
   /** Direct handles to editors and other HTML elements after render. */
   refs: Map<string, CellHandle>;
 
-  /** The full path to the notebook. */
-  path: string;
-
-  /** The file name of the notebook. */
-  filename: string;
-
-  /** The directory of the notebook. */
-  directory: string;
-
-  constructor(path: string) {
-    this.path = path;
-
-    const parts = path.split("/");
-
-    this.filename = parts.pop()!;
-    this.directory = parts.join("/");
-
-    this.store = createNotebookStore();
+  constructor() {
+    const store = createNotebookStore();
+    this.store = store;
     this.refs = new Map();
 
-    this.kernelStartPromise = this.startKernel();
-    this.loadNotebook();
+    this.kernelStartPromise = (async () => {
+      const kernelId = await invoke<string>("start_kernel", {
+        specName: "python3",
+      });
+      store.setState({ kernelId });
+    })();
   }
 
+  /** Access the current value of the notebook store, non-reactively. */
   get state() {
-    // Helper function, used internally to get the current notebook store state.
     return this.store.getState();
   }
 
-  get kernelId() {
-    return this.state.kernelId;
+  /** Load a notebook from a direct object. */
+  loadNotebook(notebook: NotebookRoot) {
+    this.state.loadNotebook(notebook);
+    this.refs = new Map(this.state.cellIds.map((cellId) => [cellId, {}]));
   }
 
-  async loadNotebook() {
+  /** Load a notebook from a file path. */
+  async loadNotebookFromPath(path: string) {
     try {
-      const notebook = await invoke<NotebookRoot>("get_notebook", {
-        path: this.path,
-      });
-
-      this.state.loadNotebook(notebook);
-      this.refs = notebook.cells.reduce((acc, cell) => {
-        acc.set(cell.id, {});
-        return acc;
-      }, this.refs);
-    } catch (e: unknown) {
-      this.state.setIsLoading(false);
-
-      if (e instanceof Error || typeof e === "string") {
-        this.state.setError(e.toString());
-      } else {
-        this.state.setError(
-          "An unknown error occurred while loading the notebook.",
-        );
-      }
+      this.state.startLoading();
+    } catch {
+      return;
     }
-  }
-
-  async startKernel() {
-    const kernelId = await invoke<string>("start_kernel", {
-      specName: "python3",
-    });
-    this.store.setState({ kernelId });
+    try {
+      const notebook = await invoke<NotebookRoot>("get_notebook", { path });
+      this.loadNotebook(notebook);
+      this.state.setPath(path);
+    } catch (e: any) {
+      this.state.setLoadError(e.toString());
+    }
   }
 
   addCell(initialText: string): string {
@@ -202,7 +206,7 @@ export class Notebook {
   }
 
   async execute(cellId: string) {
-    if (!this.kernelId) {
+    if (!this.state.kernelId) {
       await this.kernelStartPromise;
     }
 
@@ -274,7 +278,11 @@ export class Notebook {
         }
       };
 
-      await invoke("run_cell", { kernelId: this.kernelId, code, onEvent });
+      await invoke("run_cell", {
+        kernelId: this.state.kernelId,
+        code,
+        onEvent,
+      });
     } catch (error: any) {
       // TODO: Render backtraces properly here, and do not prune existing output.
       status = "error";
@@ -284,6 +292,11 @@ export class Notebook {
       update();
     }
   }
+}
+
+/** Helper function to convert a maybe-multiline string to a string. */
+function multiline(string: string | string[]): string {
+  return typeof string === "string" ? string : string.join("");
 }
 
 /**

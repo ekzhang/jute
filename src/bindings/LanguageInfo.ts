@@ -12,17 +12,17 @@ export type LanguageInfo = {
   /**
    * CodeMirror mode to use for the language.
    */
-  codemirror_mode: CodeMirrorMode | null;
+  codemirror_mode?: CodeMirrorMode;
   /**
    * File extension for files in this language.
    */
-  file_extension: string | null;
+  file_extension?: string;
   /**
    * MIME type for files in this language.
    */
-  mimetype: string | null;
+  mimetype?: string;
   /**
    * Pygments lexer for syntax highlighting.
    */
-  pygments_lexer: string | null;
+  pygments_lexer?: string;
 };

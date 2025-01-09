@@ -9,7 +9,7 @@ export type RawCell = {
   /**
    * Identifier of the cell.
    */
-  id: string;
+  id?: string;
   /**
    * Metadata for the cell.
    */
@@ -21,7 +21,5 @@ export type RawCell = {
   /**
    * Attachments (e.g., images) in the cell.
    */
-  attachments:
-    | { [key in string]?: { [key in string]?: MultilineString } }
-    | null;
+  attachments?: { [key in string]?: { [key in string]?: MultilineString } };
 };

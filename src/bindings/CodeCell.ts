@@ -10,7 +10,7 @@ export type CodeCell = {
   /**
    * Identifier of the cell.
    */
-  id: string;
+  id?: string;
   /**
    * Metadata for the cell.
    */

@@ -7,5 +7,5 @@ export type Author = {
   /**
    * Name of the author.
    */
-  name: string | null;
+  name?: string;
 };
