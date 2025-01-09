@@ -216,12 +216,12 @@ export class Notebook {
   addCell(type: CellType, initialText: string): string {
     const cellId = Math.random().toString(36).slice(2);
     this.refs.set(cellId, {});
-    this.store.getState().addCell(cellId, type, initialText);
+    this.state.addCell(cellId, type, initialText);
     return cellId;
   }
 
   setCellType(cellId: string, type: CellType) {
-    this.store.getState().setCellType(cellId, type);
+    this.state.setCellType(cellId, type);
   }
 
   clearOutput(cellId: string) {
