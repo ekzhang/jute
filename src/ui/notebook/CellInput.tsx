@@ -126,14 +126,20 @@ export default function CellInput({ cellId }: Props) {
             {
               key: "Shift-Enter",
               run: () => {
-                notebook.execute(cellId);
-                return true;
+                if (type === "code") {
+                  notebook.execute(cellId);
+                  return true;
+                }
+                return false;
               },
             },
             {
               key: "Mod-Enter",
               run: () => {
-                notebook.execute(cellId);
+                if (type === "code") {
+                  notebook.execute(cellId);
+                  return true;
+                }
                 return true;
               },
             },
