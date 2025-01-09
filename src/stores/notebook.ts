@@ -18,6 +18,7 @@ export type NotebookStoreState = {
   /** Information about each cell, keyed by ID. */
   cells: {
     [cellId: string]: {
+      type: CellType;
       initialText: string;
       output?: NotebookOutput;
     };
@@ -36,6 +37,8 @@ export type NotebookStoreState = {
   kernelId?: string;
 };
 
+export type CellType = "code" | "markdown";
+
 export type NotebookOutput = {
   status: "success" | "error";
   output: string;
@@ -49,7 +52,7 @@ export type NotebookOutput = {
 /** Actions are kept private, only to be used from the `Notebook` class. */
 type NotebookStoreActions = {
   /** Add a new cell to the notebook. */
-  addCell: (id: string, initialText: string) => void;
+  addCell: (id: string, type: CellType, initialText: string) => void;
 
   /** Set the output of a cell after it runs. */
   setOutput: (cellId: string, output: NotebookOutput | undefined) => void;
@@ -81,10 +84,11 @@ function createNotebookStore(): StoreApi<NotebookStore> {
       cells: {},
       isLoading: false,
 
-      addCell: (cellId, initialText) =>
+      addCell: (cellId, type, initialText) =>
         set((state) => {
           state.cellIds.push(cellId);
           state.cells[cellId] = {
+            type,
             initialText,
           };
         }),
@@ -103,13 +107,20 @@ function createNotebookStore(): StoreApi<NotebookStore> {
 
       loadNotebook: (notebook) =>
         set((state) => {
+          // Filter out 'raw' cells, as they aren't supported yet.
+          const cells = notebook.cells.filter(
+            (cell) =>
+              cell.cell_type === "code" || cell.cell_type === "markdown",
+          );
+
           // Some older notebooks have no cell IDs, so we generate them on import.
-          const cellIds = notebook.cells.map((cell) => cell.id ?? uuidv4());
+          const cellIds = cells.map((cell) => cell.id ?? uuidv4());
+
           state.cellIds = cellIds;
           state.cells = Object.fromEntries(
-            notebook.cells.map((cell, i) => [
+            cells.map((cell, i) => [
               cellIds[i],
-              { initialText: multiline(cell.source) },
+              { type: cell.cell_type, initialText: multiline(cell.source) },
             ]),
           );
           state.isLoading = false;
@@ -194,10 +205,10 @@ export class Notebook {
     }
   }
 
-  addCell(initialText: string): string {
+  addCell(type: CellType, initialText: string): string {
     const cellId = Math.random().toString(36).slice(2);
     this.refs.set(cellId, {});
-    this.store.getState().addCell(cellId, initialText);
+    this.store.getState().addCell(cellId, type, initialText);
     return cellId;
   }
 

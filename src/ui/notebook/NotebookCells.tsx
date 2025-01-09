@@ -2,6 +2,7 @@ import {
   BoltIcon,
   CheckIcon,
   Code2Icon,
+  LetterTextIcon,
   LucideIcon,
   PlusIcon,
   RouteOffIcon,
@@ -39,6 +40,7 @@ const AsideIconButton = ({
 
 function CellInputAside({ cellId }: { cellId: string }) {
   const notebook = useNotebook();
+  const type = useStore(notebook.store, (state) => state.cells[cellId].type);
   const output = useStore(
     notebook.store,
     (state) => state.cells[cellId].output,
@@ -48,8 +50,8 @@ function CellInputAside({ cellId }: { cellId: string }) {
   return (
     <Aside>
       <div className="mt-1 flex gap-0.5">
-        <AsideIconButton Icon={Code2Icon} />
-        <AsideIconButton Icon={RouteOffIcon} />
+        <AsideIconButton Icon={type === "code" ? Code2Icon : LetterTextIcon} />
+        {type === "code" && <AsideIconButton Icon={RouteOffIcon} />}
         <AsideIconButton Icon={BoltIcon} />
       </div>
       {output?.timings?.finishedAt && (
@@ -120,7 +122,7 @@ export default function NotebookCells() {
         <button
           className="flex w-full items-center justify-center gap-1.5 rounded border border-gray-200 p-2 transition-colors hover:border-gray-300 hover:bg-gray-50"
           onClick={() => {
-            notebook.addCell("");
+            notebook.addCell("code", "");
           }}
         >
           <PlusIcon size={18} />

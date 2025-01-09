@@ -10,6 +10,8 @@ const simpleNotebook = {
       cell_type: "markdown",
       metadata: {},
       source: [
+        "## A simple notebook\n",
+        "\n",
         "This is a simple notebook to get you started! Run cells with `Shift+Enter`.",
       ],
     },

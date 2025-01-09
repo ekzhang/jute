@@ -10,6 +10,7 @@ import {
   historyKeymap,
   indentWithTab,
 } from "@codemirror/commands";
+import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
 import {
   bracketMatching,
@@ -20,7 +21,7 @@ import {
   syntaxHighlighting,
 } from "@codemirror/language";
 import { lintKeymap } from "@codemirror/lint";
-import { EditorState, Prec } from "@codemirror/state";
+import { Compartment, EditorState, Prec } from "@codemirror/state";
 import {
   EditorView,
   crosshairCursor,
@@ -31,7 +32,7 @@ import {
   lineNumbers,
   rectangularSelection,
 } from "@codemirror/view";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 
 import { useNotebook } from "@/stores/notebook";
@@ -74,12 +75,18 @@ const editorTheme = EditorView.theme({
   },
 });
 
+const language = new Compartment();
+
 /**
  * Cell input for a notebook. Note that this component requires CodeMirror, so
  * it's wrapped in lazy loading to improve initial render speed.
  */
 export default function CellInput({ cellId }: Props) {
   const notebook = useNotebook();
+
+  const [view, setView] = useState<EditorView | null>(null);
+
+  const type = useStore(notebook.store, (state) => state.cells[cellId].type);
   const initialText = useStore(
     notebook.store,
     (state) => state.cells[cellId].initialText,
@@ -88,7 +95,7 @@ export default function CellInput({ cellId }: Props) {
   const containerEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const editor = new EditorView({
+    const view = new EditorView({
       extensions: [
         highlightSpecialChars(),
         history(),
@@ -133,7 +140,7 @@ export default function CellInput({ cellId }: Props) {
           ]),
         ),
 
-        python(),
+        language.of(type === "code" ? python() : markdown()),
         indentUnit.of("    "),
         EditorState.tabSize.of(4),
         editorTheme,
@@ -144,13 +151,23 @@ export default function CellInput({ cellId }: Props) {
 
     const ref = notebook.refs.get(cellId);
     if (ref) {
-      ref.editor = editor;
+      ref.editor = view;
     } else {
       console.warn(`Ref for cell ${cellId} not found`);
     }
 
-    return () => editor.destroy();
+    setView(view);
+    return () => view.destroy();
   }, [cellId, notebook]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // If the language changes, reconfigure the compartment.
+  useEffect(() => {
+    if (view) {
+      view.dispatch({
+        effects: language.reconfigure(type === "code" ? python() : markdown()),
+      });
+    }
+  }, [view, type]);
 
   return (
     <div ref={containerEl}>

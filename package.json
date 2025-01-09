@@ -15,6 +15,7 @@
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.4",
     "@codemirror/commands": "^6.7.1",
+    "@codemirror/lang-markdown": "^6.3.1",
     "@codemirror/lang-python": "^6.1.6",
     "@codemirror/language": "^6.10.8",
     "@codemirror/lint": "^6.8.4",
