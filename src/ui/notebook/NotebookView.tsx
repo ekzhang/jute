@@ -2,7 +2,7 @@ import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import { useNotebook } from "@/stores/notebook";
-import { Error } from "@/ui/shared/Error";
+import { UnhandledError } from "@/ui/shared/UnhandledError";
 
 import NotebookCells from "./NotebookCells";
 import NotebookLocation from "./NotebookLocation";
@@ -29,7 +29,8 @@ export default function NotebookView() {
       <div className="min-w-0 py-16">
         <NotebookLocation directory={directory} filename={filename} />
 
-        {loadError ? <Error error={loadError} /> : <NotebookCells />}
+        {/* TODO: Handle these errors gracefully. */}
+        {loadError ? <UnhandledError error={loadError} /> : <NotebookCells />}
       </div>
       <div
         className="border-l border-gray-200 bg-gray-100"

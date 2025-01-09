@@ -4,7 +4,7 @@ export default function NotFoundPage() {
   const [location] = useLocation();
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center text-center">
+    <div className="flex h-screen flex-col items-center justify-center p-6 text-center">
       <h1 className="mb-4 text-3xl">Invalid path</h1>
       <p className="mb-4 max-w-md">
         It looks we've made a mistake! Please{" "}
@@ -17,7 +17,7 @@ export default function NotFoundPage() {
         </a>{" "}
         and include this URL in your report:
       </p>
-      <pre className="mb-4 min-w-40 max-w-lg select-text overflow-y-auto rounded-md bg-gray-200 p-4 font-medium">
+      <pre className="mb-4 min-w-40 max-w-lg select-text overflow-auto rounded-md bg-gray-200 p-4 font-medium">
         <code>{location}</code>
       </pre>
     </div>

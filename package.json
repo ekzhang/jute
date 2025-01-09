@@ -31,6 +31,7 @@
     "lucide-react": "^0.469.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-error-boundary": "^5.0.0",
     "uuid": "^11.0.3",
     "wouter": "^3.3.5",
     "zustand": "^5.0.2"
