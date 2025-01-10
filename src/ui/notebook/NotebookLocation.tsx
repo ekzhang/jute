@@ -38,7 +38,7 @@ export default function NotebookLocation({ directory, filename }: Props) {
       {/* TODO: Alternate shortened display if the notebook already has an <h1> heading. */}
       <h1 className="mt-2 text-3xl">
         {basename}
-        <span className="text-gray-300">.{extension}</span>
+        {extension && <span className="text-gray-300">.{extension}</span>}
       </h1>
     </div>
   );
