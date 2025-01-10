@@ -63,4 +63,6 @@ winver = "1.0.0"
 tauri-build = { version = "2", features = [] }
 
 [features]
+# unused, workaround for https://github.com/SSheldon/rust-objc/issues/125
+cargo-clippy = []
 custom-protocol = ["tauri/custom-protocol"]
