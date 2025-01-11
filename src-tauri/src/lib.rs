@@ -50,6 +50,14 @@ pub enum Error {
     /// Error interacting with the filesystem.
     #[error("filesystem error: {0}")]
     Filesystem(io::Error),
+
+    /// Error returned directly from Tauri.
+    #[error("tauri error: {0}")]
+    Tauri(#[from] tauri::Error),
+
+    /// Error while interacting with the shell plugin.
+    #[error("shell plugin error: {0}")]
+    PluginShell(#[from] tauri_plugin_shell::Error),
 }
 
 impl serde::Serialize for Error {

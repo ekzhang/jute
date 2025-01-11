@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{env, path::PathBuf};
+use std::{env, io, path::PathBuf};
 
 use jute::{
     backend::{
@@ -9,6 +9,7 @@ use jute::{
         local::{environment, LocalKernel},
         notebook::NotebookRoot,
     },
+    entity::{Entity, EntityId},
     state::State,
     Error,
 };
@@ -16,6 +17,7 @@ use sysinfo::System;
 #[allow(unused_imports)]
 use tauri::Manager;
 use tauri::{ipc::Channel, AppHandle};
+use tauri_plugin_shell::ShellExt;
 use tracing::info;
 
 #[tauri::command]
@@ -110,6 +112,74 @@ async fn run_cell(
     Ok(())
 }
 
+#[tauri::command]
+async fn venv_create(python_version: &str, app: AppHandle) -> Result<EntityId, Error> {
+    let venv_id = EntityId::new(Entity::Venv);
+    let venv_path = app
+        .path()
+        .app_data_dir()?
+        .join("venv")
+        .join(venv_id.to_string());
+
+    let output = app
+        .shell()
+        .sidecar("uv")?
+        .args(["venv", "--no-project", "--seed", "--relocatable"])
+        .args([
+            "--python",
+            python_version,
+            "--python-preference",
+            "only-managed",
+        ])
+        .arg(&venv_path)
+        .output()
+        .await?;
+
+    if output.status.success() {
+        info!("created venv at {venv_path:?}");
+        Ok(venv_id)
+    } else {
+        let message = String::from_utf8_lossy(&output.stderr);
+        Err(Error::Subprocess(io::Error::new(
+            io::ErrorKind::Other,
+            message.trim(),
+        )))
+    }
+}
+
+#[tauri::command]
+async fn venv_list(app: AppHandle) -> Result<Vec<EntityId>, Error> {
+    let venv_dir = app.path().app_data_dir()?.join("venv");
+    let mut venvs = Vec::new();
+    let mut it = tokio::fs::read_dir(venv_dir)
+        .await
+        .map_err(Error::Filesystem)?;
+    while let Some(entry) = it.next_entry().await.map_err(Error::Filesystem)? {
+        if entry.file_type().await.is_ok_and(|f| f.is_dir()) {
+            if let Ok(venv_id) = entry.file_name().into_string() {
+                if let Ok(venv_id) = venv_id.parse::<EntityId>() {
+                    venvs.push(venv_id);
+                }
+            }
+        }
+    }
+    Ok(venvs)
+}
+
+#[tauri::command]
+async fn venv_delete(venv_id: EntityId, app: AppHandle) -> Result<bool, Error> {
+    let venv_dir = app.path().app_data_dir()?.join("venv");
+    let venv_path = venv_dir.join(venv_id.to_string());
+    if tokio::fs::metadata(&venv_path).await.is_ok() {
+        tokio::fs::remove_dir_all(&venv_path)
+            .await
+            .map_err(Error::Filesystem)?;
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
 /// Handle file associations opened in the application.
 ///
 /// Jute registers itself as an application to open `.ipynb` files, which are
@@ -159,6 +229,9 @@ fn main() {
             stop_kernel,
             run_cell,
             get_notebook,
+            venv_create,
+            venv_list,
+            venv_delete,
         ])
         .setup(|app| {
             // Parse files that were opened via CLI arguments (Windows + Linux).

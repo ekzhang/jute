@@ -87,7 +87,9 @@ def download_uv(target: str, version: str = UV_VERSION) -> None:
         archive_data = resp.read()
 
     uv_binary, _uvx_binary = read_archive(url, BytesIO(archive_data), archive_paths)
-    Path(f"uv-{target}{suffix}").write_bytes(uv_binary)
+    output_path = Path(f"uv-{target}{suffix}")
+    output_path.write_bytes(uv_binary)
+    output_path.chmod(0o755)
     display_file(f"uv-{target}{suffix}")
 
 
