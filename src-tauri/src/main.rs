@@ -3,6 +3,7 @@
 
 use std::{env, io, path::PathBuf};
 
+use ini::Ini;
 use jute::{
     backend::{
         commands::{self, RunCellEvent},
@@ -13,6 +14,7 @@ use jute::{
     state::State,
     Error,
 };
+use serde::Serialize;
 use sysinfo::System;
 #[allow(unused_imports)]
 use tauri::Manager;
@@ -113,6 +115,41 @@ async fn run_cell(
 }
 
 #[tauri::command]
+async fn venv_list_python_versions(app: AppHandle) -> Result<Vec<String>, Error> {
+    let output = app
+        .shell()
+        .sidecar("uv")?
+        .args(["--color", "never"])
+        .args(["python", "list", "--all-versions"])
+        .args(["--python-preference", "only-managed"])
+        .output()
+        .await?;
+
+    if output.status.success() {
+        let mut versions = Vec::new();
+        for line in String::from_utf8_lossy(&output.stdout).lines() {
+            if let Some(version_string) = line.split_whitespace().next() {
+                // Some versions are prefixed with `pypy-`, ignore those for now.
+                if let Some(stripped) = version_string.strip_prefix("cpython-") {
+                    let version_number = match stripped.find("-") {
+                        Some(index) => &stripped[..index],
+                        None => stripped,
+                    };
+                    versions.push(version_number.to_string());
+                }
+            }
+        }
+        Ok(versions)
+    } else {
+        let message = String::from_utf8_lossy(&output.stderr);
+        Err(Error::Subprocess(io::Error::new(
+            io::ErrorKind::Other,
+            message.trim(),
+        )))
+    }
+}
+
+#[tauri::command]
 async fn venv_create(python_version: &str, app: AppHandle) -> Result<EntityId, Error> {
     let venv_id = EntityId::new(Entity::Venv);
     let venv_path = app
@@ -124,6 +161,7 @@ async fn venv_create(python_version: &str, app: AppHandle) -> Result<EntityId, E
     let output = app
         .shell()
         .sidecar("uv")?
+        .args(["--color", "never"])
         .args(["venv", "--no-project", "--seed", "--relocatable"])
         .args([
             "--python",
@@ -147,8 +185,17 @@ async fn venv_create(python_version: &str, app: AppHandle) -> Result<EntityId, E
     }
 }
 
+#[derive(Serialize, Debug)]
+struct VenvListItem {
+    id: EntityId,
+    python_version: Option<String>,
+    uv_version: Option<String>,
+    implementation: Option<String>,
+    home: Option<String>,
+}
+
 #[tauri::command]
-async fn venv_list(app: AppHandle) -> Result<Vec<EntityId>, Error> {
+async fn venv_list(app: AppHandle) -> Result<Vec<VenvListItem>, Error> {
     let venv_dir = app.path().app_data_dir()?.join("venv");
     let mut venvs = Vec::new();
     let mut it = tokio::fs::read_dir(venv_dir)
@@ -158,7 +205,28 @@ async fn venv_list(app: AppHandle) -> Result<Vec<EntityId>, Error> {
         if entry.file_type().await.is_ok_and(|f| f.is_dir()) {
             if let Ok(venv_id) = entry.file_name().into_string() {
                 if let Ok(venv_id) = venv_id.parse::<EntityId>() {
-                    venvs.push(venv_id);
+                    // Read the venv metadata file to get the Python version.
+                    let metadata_path = entry.path().join("pyvenv.cfg");
+                    let mut python_version = None;
+                    let mut uv_version = None;
+                    let mut implementation = None;
+                    let mut home = None;
+                    if let Ok(metadata) = tokio::fs::read_to_string(&metadata_path).await {
+                        if let Ok(conf) = Ini::load_from_str(&metadata) {
+                            let sec = conf.general_section();
+                            python_version = sec.get("version_info").map(String::from);
+                            uv_version = sec.get("uv").map(String::from);
+                            implementation = sec.get("implementation").map(String::from);
+                            home = sec.get("home").map(String::from);
+                        }
+                    }
+                    venvs.push(VenvListItem {
+                        id: venv_id,
+                        python_version,
+                        uv_version,
+                        implementation,
+                        home,
+                    });
                 }
             }
         }
@@ -229,6 +297,7 @@ fn main() {
             stop_kernel,
             run_cell,
             get_notebook,
+            venv_list_python_versions,
             venv_create,
             venv_list,
             venv_delete,
