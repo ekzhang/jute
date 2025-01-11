@@ -6,6 +6,7 @@
 use std::io;
 
 pub mod backend;
+pub mod entity;
 pub mod menu;
 pub mod plugins;
 pub mod state;

@@ -24,6 +24,7 @@ reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_urlencoded = "0.7.1"
+serde_with = "3.12.0"
 sha2 = "0.10.8"
 strum = { version = "0.26.3", features = ["derive"] }
 sysinfo = "0.30.3"
