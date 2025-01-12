@@ -46,4 +46,33 @@
       @apply border border-gray-300 px-3 py-1.5;
     }
   }
+
+  ol {
+    @apply my-4 list-decimal pl-7;
+    p {
+      @apply mb-1 mt-0;
+    }
+    ol,
+    ul {
+      @apply my-0;
+    }
+  }
+
+  ul {
+    @apply my-4 list-disc pl-7;
+    p {
+      @apply mb-1 mt-0;
+    }
+    ol,
+    ul {
+      @apply my-0;
+    }
+    ul {
+      list-style-type: circle;
+    }
+  }
+
+  li:global(.task-list-item) > p {
+    @apply my-0;
+  }
 }
