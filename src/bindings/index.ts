@@ -1,4 +1,5 @@
 export * from "./Output";
+export * from "./ClearOutput";
 export * from "./OutputDisplayData";
 export * from "./CodeMirrorMode";
 export * from "./OutputStream";

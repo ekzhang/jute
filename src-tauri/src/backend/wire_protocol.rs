@@ -115,6 +115,15 @@ pub enum KernelMessageType {
     /// For debugging kernels to send events.
     DebugEvent,
 
+    /// Open a comm to the frontend, used for interactive widgets.
+    CommOpen,
+
+    /// A one-way comm message, with no expected reply format.
+    CommMsg,
+
+    /// Close a comm to the frontend.
+    CommClose,
+
     /// Another kernel message type that is unrecognized.
     #[serde(untagged)]
     Other(String),
@@ -501,6 +510,31 @@ pub struct ClearOutput {
     /// for the clear output request to complete before sending further
     /// messages.
     pub wait: bool,
+}
+
+/// Open a comm to the frontend, used for interactive widgets.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
+pub struct CommOpen {
+    /// The unique ID of the comm.
+    pub comm_id: String,
+
+    /// The target name of the comm. If this is is not understood by the
+    /// frontend, they must reply with a `comm_close` message.
+    pub target_name: String,
+
+    /// The data to be sent to the frontend.
+    pub data: serde_json::Value,
+}
+
+/// A one-way comm message, with no expected reply format. This struct is reused
+/// for both `comm_msg` and `comm_close` message types.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
+pub struct CommMessage {
+    /// The unique ID of the comm.
+    pub comm_id: String,
+
+    /// The data to be sent to the frontend.
+    pub data: serde_json::Value,
 }
 
 /// Represents a stateful kernel connection that can be used to communicate with

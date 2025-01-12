@@ -117,7 +117,6 @@ export default function CellInput({ cellId }: Props) {
         notebook.execute(cellId);
       } else if (type === "markdown") {
         if (view) {
-          console.log(view.state.doc.toString());
           setRenderedMarkdown(view.state.doc.toString());
         }
         setEditingMarkdown(false);

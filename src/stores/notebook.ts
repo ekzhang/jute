@@ -296,6 +296,9 @@ export class Notebook {
           } else {
             console.warn("Skipping display for bad display ID", message.data);
           }
+        } else if (message.event === "clear_output") {
+          // TODO: Implement clear_output message type, with `wait=True` support.
+          console.warn("clear_output not implemented yet");
         } else {
           console.warn("Skipping unhandled event", message);
         }

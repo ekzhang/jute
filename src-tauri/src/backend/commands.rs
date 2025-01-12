@@ -5,8 +5,8 @@ use ts_rs::TS;
 
 use super::{
     wire_protocol::{
-        DisplayData, ErrorReply, ExecuteRequest, ExecuteResult, KernelInfoReply, KernelInfoRequest,
-        KernelMessage, KernelMessageType, KernelStatus, Reply, Status, Stream,
+        ClearOutput, DisplayData, ErrorReply, ExecuteRequest, ExecuteResult, KernelInfoReply,
+        KernelInfoRequest, KernelMessage, KernelMessageType, KernelStatus, Reply, Status, Stream,
     },
     KernelConnection,
 };
@@ -45,6 +45,9 @@ pub enum RunCellEvent {
 
     /// Update previously-displayed data with a display ID.
     UpdateDisplayData(DisplayData),
+
+    /// Clear the output of a cell.
+    ClearOutput(ClearOutput),
 
     /// Error if the cell raised an exception.
     Error(ErrorReply),
@@ -110,6 +113,10 @@ pub async fn run_cell(
                 KernelMessageType::UpdateDisplayData => {
                     let msg = msg.into_typed::<DisplayData>()?;
                     _ = tx.send(RunCellEvent::UpdateDisplayData(msg.content)).await;
+                }
+                KernelMessageType::ClearOutput => {
+                    let msg = msg.into_typed::<ClearOutput>()?;
+                    _ = tx.send(RunCellEvent::ClearOutput(msg.content)).await;
                 }
                 KernelMessageType::Error => {
                     let msg = msg.into_typed::<ErrorReply>()?;
