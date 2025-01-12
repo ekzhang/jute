@@ -20,7 +20,7 @@ const FeatureButton = ({
 
 export default function NotebookFooter() {
   return (
-    <div className="absolute inset-x-0 bottom-0 flex h-16 flex-col justify-end bg-gradient-to-t from-white/85 from-40% to-white/0">
+    <div className="absolute inset-x-0 bottom-0 z-10 flex h-16 flex-col justify-end bg-gradient-to-t from-white/85 from-40% to-white/0">
       <footer className="flex items-end gap-6 px-2 py-1">
         <div className="flex items-center gap-1">
           <FeatureButton title="AI Copilot" Icon={SparklesIcon} />

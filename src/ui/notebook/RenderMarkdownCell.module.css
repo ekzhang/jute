@@ -29,4 +29,8 @@
   a {
     @apply text-blue-700 hover:underline;
   }
+
+  blockquote {
+    @apply my-4 border-l-4 pl-4;
+  }
 }
