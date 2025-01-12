@@ -229,6 +229,24 @@ impl From<MultilineString> for String {
     }
 }
 
+impl From<String> for MultilineString {
+    fn from(value: String) -> Self {
+        // Convert a string to a multiline string, mimicking Jupyter.
+        //
+        // Usually, we could just use `MultilineString::Single`, but Jupyter's
+        // behavior is to always return an array, so we respect that. It also
+        // breaks strings after newline characters.
+        let mut lines = Vec::new();
+        let mut remaining = &value[..];
+        while !remaining.is_empty() {
+            let next_break = remaining.find('\n').map_or(remaining.len(), |i| i + 1);
+            lines.push(remaining[..next_break].to_string());
+            remaining = &remaining[next_break..];
+        }
+        MultilineString::Multi(lines)
+    }
+}
+
 /// Output from executing a code cell.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 #[serde(tag = "output_type", rename_all = "snake_case")]
@@ -412,5 +430,33 @@ mod tests {
         assert_eq!(notebook.nbformat_minor, 4);
         assert_eq!(notebook.nbformat, 4);
         assert_eq!(notebook.cells.len(), 1);
+    }
+
+    #[test]
+    fn string_to_multiline() {
+        let empty = MultilineString::from("".to_string());
+        assert_eq!(empty, MultilineString::Multi(vec![]));
+
+        let single = MultilineString::from("Hello, world!".to_string());
+        assert_eq!(
+            single,
+            MultilineString::Multi(vec!["Hello, world!".to_string()])
+        );
+
+        let multi = MultilineString::from("Hello,\nworld!".to_string());
+        assert_eq!(
+            multi,
+            MultilineString::Multi(vec!["Hello,\n".to_string(), "world!".to_string()])
+        );
+
+        let multi = MultilineString::from("Hello,\n\nworld!\n".to_string());
+        assert_eq!(
+            multi,
+            MultilineString::Multi(vec![
+                "Hello,\n".to_string(),
+                "\n".to_string(),
+                "world!\n".to_string()
+            ])
+        );
     }
 }
