@@ -10,7 +10,7 @@ use strum::{EnumIter, IntoEnumIterator};
 /// Entity category for generated IDs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter)]
 pub enum Entity {
-    /// A local Python virtual environment created.
+    /// Python virtual environments created by Jute.
     Venv,
 }
 

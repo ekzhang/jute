@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 import { NotebookRoot } from "@/bindings";
+import Header from "@/ui/shared/Header";
 
 const simpleNotebook = {
   cells: [
@@ -70,39 +71,42 @@ const simpleNotebook = {
 export default function HomePage() {
   const [, navigate] = useLocation();
   return (
-    <div className="px-8 py-20">
-      <h1 className="mb-2.5 text-4xl">Welcome to Jute</h1>
+    <div>
+      <Header />
+      <div className="px-8 py-20">
+        <h1 className="mb-2.5 text-4xl">Welcome to Jute</h1>
 
-      <h2 className="text-lg text-gray-400">
-        A native notebook for interactive computing.
-      </h2>
+        <h2 className="text-lg text-gray-400">
+          A native notebook for interactive computing.
+        </h2>
 
-      <div className="my-8 flex gap-4">
-        <Link
-          to={
-            "/notebook?" +
-            new URLSearchParams({ inline: JSON.stringify(simpleNotebook) })
-          }
-          className="flex h-60 w-48 flex-col justify-end rounded border border-gray-300 p-4 transition-colors hover:border-black"
+        <div className="my-8 flex gap-4">
+          <Link
+            to={
+              "/notebook?" +
+              new URLSearchParams({ inline: JSON.stringify(simpleNotebook) })
+            }
+            className="flex h-60 w-48 flex-col justify-end rounded border border-gray-300 p-4 transition-colors hover:border-black"
+          >
+            Getting started
+          </Link>
+        </div>
+
+        <button
+          className="flex items-center gap-2 hover:underline"
+          onClick={async () => {
+            const file = await open({
+              multiple: false,
+              directory: false,
+              filters: [{ name: "Jupyter Notebook", extensions: ["ipynb"] }],
+            });
+            if (file)
+              navigate("/notebook?" + new URLSearchParams({ path: file }));
+          }}
         >
-          Getting started
-        </Link>
+          Open a notebook <ArrowRight size="1em" />
+        </button>
       </div>
-
-      <button
-        className="flex items-center gap-2 hover:underline"
-        onClick={async () => {
-          const file = await open({
-            multiple: false,
-            directory: false,
-            filters: [{ name: "Jupyter Notebook", extensions: ["ipynb"] }],
-          });
-          if (file)
-            navigate("/notebook?" + new URLSearchParams({ path: file }));
-        }}
-      >
-        Open a notebook <ArrowRight size="1em" />
-      </button>
     </div>
   );
 }
