@@ -21,7 +21,7 @@ import {
   syntaxHighlighting,
 } from "@codemirror/language";
 import { lintKeymap } from "@codemirror/lint";
-import { Compartment, EditorState, Prec } from "@codemirror/state";
+import { Compartment, EditorState, Extension, Prec } from "@codemirror/state";
 import {
   EditorView,
   crosshairCursor,
@@ -35,7 +35,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 
-import { useNotebook } from "@/stores/notebook";
+import { CellType, useNotebook } from "@/stores/notebook";
 
 import CellInputFallback from "./CellInputFallback";
 import RenderMarkdownCell from "./RenderMarkdownCell";
@@ -58,6 +58,7 @@ const editorTheme = EditorView.theme({
   },
   "& .cm-content": {
     paddingBlock: "16px",
+    flexBasis: "0 !important", // Needed to get EditorView.lineWrapping to work.
     flexShrink: "0",
   },
   "& .cm-line": {
@@ -78,6 +79,16 @@ const editorTheme = EditorView.theme({
 
 const language = new Compartment();
 const lineNumbersDynamic = new Compartment();
+
+function extensionForLanguage(type: CellType): Extension {
+  if (type === "code") {
+    return python();
+  } else if (type === "markdown") {
+    return [markdown(), EditorView.lineWrapping];
+  } else {
+    throw new Error(`Unsupported cell type: ${type}`);
+  }
+}
 
 /**
  * Cell input for a notebook. Note that this component requires CodeMirror, so
@@ -177,12 +188,12 @@ export default function CellInput({ cellId }: Props) {
     if (view) {
       view.dispatch({
         effects: [
-          language.reconfigure(type === "code" ? python() : markdown()),
           lineNumbersDynamic.reconfigure(
             type === "code"
               ? lineNumbers({ formatNumber: (x) => String(x + 0) })
               : lineNumbers({ formatNumber: () => "" }),
           ),
+          language.reconfigure(extensionForLanguage(type)),
         ],
       });
     }
