@@ -1,0 +1,32 @@
+.markdown {
+  @apply select-text;
+
+  h1 {
+    @apply mb-6 mt-4 text-3xl;
+  }
+
+  h2 {
+    @apply my-4 text-2xl;
+  }
+
+  h3 {
+    @apply my-4 text-xl;
+  }
+
+  h4 {
+    @apply my-4 text-lg;
+  }
+
+  h5,
+  h6 {
+    @apply my-4 text-base;
+  }
+
+  p {
+    @apply my-4;
+  }
+
+  a {
+    @apply text-blue-700 hover:underline;
+  }
+}

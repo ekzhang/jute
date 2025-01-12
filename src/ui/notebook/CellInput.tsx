@@ -38,6 +38,7 @@ import { useStore } from "zustand";
 import { useNotebook } from "@/stores/notebook";
 
 import CellInputFallback from "./CellInputFallback";
+import RenderMarkdownCell from "./RenderMarkdownCell";
 
 type Props = {
   /** A globally unique identifier for the editor. */
@@ -93,9 +94,26 @@ export default function CellInput({ cellId }: Props) {
     (state) => state.cells[cellId].initialText,
   );
 
+  // Only updated when the editor view is switched to Markdown rendering mode.
+  const [renderedMarkdown, setRenderedMarkdown] = useState(initialText);
+  const [editingMarkdown, setEditingMarkdown] = useState(false);
+
   const containerEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const onRun = () => {
+      if (type === "code") {
+        notebook.execute(cellId);
+      } else if (type === "markdown") {
+        if (view) {
+          console.log(view.state.doc.toString());
+          setRenderedMarkdown(view.state.doc.toString());
+        }
+        setEditingMarkdown(false);
+      }
+      return true;
+    };
+
     const view = new EditorView({
       extensions: [
         highlightSpecialChars(),
@@ -123,26 +141,8 @@ export default function CellInput({ cellId }: Props) {
 
         Prec.highest(
           keymap.of([
-            {
-              key: "Shift-Enter",
-              run: () => {
-                if (type === "code") {
-                  notebook.execute(cellId);
-                  return true;
-                }
-                return false;
-              },
-            },
-            {
-              key: "Mod-Enter",
-              run: () => {
-                if (type === "code") {
-                  notebook.execute(cellId);
-                  return true;
-                }
-                return true;
-              },
-            },
+            { key: "Shift-Enter", run: onRun },
+            { key: "Mod-Enter", run: onRun },
           ]),
         ),
 
@@ -188,12 +188,25 @@ export default function CellInput({ cellId }: Props) {
     }
   }, [view, type]);
 
+  const isRenderingMarkdown = type === "markdown" && !editingMarkdown;
+
   return (
-    <div ref={containerEl}>
-      {/* Eliminate flickering when the editor first loads in. */}
-      <div className="hidden only:block">
-        <CellInputFallback cellId={cellId} />
+    <>
+      <div
+        ref={containerEl}
+        style={{ display: isRenderingMarkdown ? "none" : "block" }}
+      >
+        {/* Eliminate flickering when the editor first loads in. */}
+        <div className="hidden only:block">
+          <CellInputFallback cellId={cellId} />
+        </div>
       </div>
-    </div>
+      {isRenderingMarkdown && (
+        <RenderMarkdownCell
+          source={renderedMarkdown}
+          onStartEdit={() => setEditingMarkdown(true)}
+        />
+      )}
+    </>
   );
 }
