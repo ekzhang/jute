@@ -33,4 +33,17 @@
   blockquote {
     @apply my-4 border-l-4 pl-4;
   }
+
+  table {
+    @apply my-4 border-collapse;
+
+    th {
+      @apply font-semibold;
+    }
+
+    td,
+    th {
+      @apply border border-gray-300 px-3 py-1.5;
+    }
+  }
 }

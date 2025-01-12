@@ -1,5 +1,6 @@
 import { Edit3Icon } from "lucide-react";
 import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import styles from "./RenderMarkdownCell.module.css";
 
@@ -17,6 +18,7 @@ export default function RenderMarkdownCell({ source, onStartEdit }: Props) {
     >
       <Markdown
         className={styles.markdown}
+        remarkPlugins={[remarkGfm]}
         components={{
           a: ({ ...props }) => (
             <a {...props} target="_blank" rel="noreferrer" />
