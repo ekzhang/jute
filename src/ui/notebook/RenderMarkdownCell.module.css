@@ -30,6 +30,10 @@
     @apply text-blue-700 hover:underline;
   }
 
+  pre {
+    @apply my-6;
+  }
+
   blockquote {
     @apply my-4 border-l-4 pl-4;
   }
