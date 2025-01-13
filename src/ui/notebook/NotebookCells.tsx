@@ -112,7 +112,7 @@ export default function NotebookCells() {
                   <AsideIconButton Icon={BoltIcon} />
                 </div>
               </Aside>
-              <div className="max-h-[560px] overflow-y-auto">
+              <div className="max-h-[680px] overflow-y-auto">
                 {/* TODO: Move this icon into the output view itself. Also it should only be displayed
                   when the cell has a return value, and next to the return value. */}
                 {/* <CornerDownRightIcon size={16} className="text-gray-400" /> */}

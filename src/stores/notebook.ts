@@ -49,7 +49,7 @@ export type CellType = "code" | "markdown";
 
 export type CellResult = {
   status: "running" | "success" | "error";
-  timings: {
+  timings?: {
     startedAt: number;
     finishedAt?: number;
   };
@@ -194,10 +194,32 @@ function notebookStoreActions(
 
         state.cellIds = cellIds;
         state.cells = Object.fromEntries(
-          cells.map((cell, i) => [
-            cellIds[i],
-            { type: cell.cell_type, initialText: multiline(cell.source) },
-          ]),
+          cells.map((cell, i) => {
+            const imported: NotebookStoreState["cells"][string] = {
+              type: cell.cell_type,
+              initialText: multiline(cell.source),
+            };
+
+            if (cell.cell_type === "code") {
+              if (cell.execution_count || cell.outputs.length > 0) {
+                // Infer status based on the outputs of the cell.
+                const status = cell.outputs.some(
+                  (output) => output.output_type === "error",
+                )
+                  ? "error"
+                  : "success";
+                imported.result = {
+                  status,
+                  outputs: cell.outputs,
+                };
+                if (cell.execution_count) {
+                  imported.result.executionCount = cell.execution_count;
+                }
+              }
+            }
+
+            return [cellIds[i], imported];
+          }),
         );
         state.isLoading = false;
         state.loadError = undefined;
@@ -343,7 +365,6 @@ export class Notebook {
       const onEvent = new Channel<RunCellEvent>();
 
       onEvent.onmessage = (message: RunCellEvent) => {
-        console.log(message);
         if (willClearOutput) {
           this.state.clearOutput(cellId);
           willClearOutput = false;
@@ -355,7 +376,6 @@ export class Notebook {
             name: message.event,
             text: message.data,
           });
-          console.log(this.state.cells[cellId].result);
         } else if (message.event === "error") {
           status = "error";
           update();

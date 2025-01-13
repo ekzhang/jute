@@ -94,7 +94,7 @@ function displayDataToHtml(
   if (typeof value === "string") {
     return `<pre>${encode(value)}</pre>`;
   } else if (Array.isArray(value)) {
-    return `<pre>${value.join("")}</pre>`;
+    return `<pre>${encode(value.join(""))}</pre>`;
   }
 
   return null;
