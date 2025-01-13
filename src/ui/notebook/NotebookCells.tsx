@@ -46,6 +46,15 @@ function CellInputAside({ cellId }: { cellId: string }) {
     (state) => state.cells[cellId].result,
   );
 
+  const formatExecutionDuration = (durationMs: number) => {
+    const seconds = durationMs / 1000;
+    if (seconds < 1) {
+      return `${durationMs} ms`;
+    } else {
+      return `${seconds.toFixed(2)} s`;
+    }
+  };
+
   // TODO: Real-time clock indicator here.
   return (
     <Aside>
@@ -67,7 +76,9 @@ function CellInputAside({ cellId }: { cellId: string }) {
             <XIcon size={16} className="mr-1 text-red-500" />
           )}
           <p className="text-sm text-gray-400">
-            {output?.timings.finishedAt - output?.timings.startedAt} ms
+            {formatExecutionDuration(
+              output?.timings.finishedAt - output?.timings.startedAt,
+            )}
           </p>
         </div>
       )}
