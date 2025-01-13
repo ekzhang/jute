@@ -43,7 +43,7 @@ function CellInputAside({ cellId }: { cellId: string }) {
   const type = useStore(notebook.store, (state) => state.cells[cellId].type);
   const output = useStore(
     notebook.store,
-    (state) => state.cells[cellId].output,
+    (state) => state.cells[cellId].result,
   );
 
   // TODO: Real-time clock indicator here.
@@ -100,14 +100,14 @@ export default function NotebookCells() {
             <CellInput cellId={id} />
           </Suspense>
 
-          {cells[id]?.output && (
+          {cells[id]?.result && (
             <>
               <hr className="border-gray-200" />
               <Aside>
                 <div className="mt-1 flex gap-0.5">
                   <AsideIconButton
                     Icon={XSquareIcon}
-                    onClick={() => notebook.clearOutput(id)}
+                    onClick={() => notebook.clearResult(id)}
                   />
                   <AsideIconButton Icon={BoltIcon} />
                 </div>
@@ -116,7 +116,7 @@ export default function NotebookCells() {
                 {/* TODO: Move this icon into the output view itself. Also it should only be displayed
                   when the cell has a return value, and next to the return value. */}
                 {/* <CornerDownRightIcon size={16} className="text-gray-400" /> */}
-                <OutputView value={cells[id].output} />
+                <OutputView value={cells[id].result} />
               </div>
             </>
           )}

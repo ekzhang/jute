@@ -506,9 +506,7 @@ pub enum KernelStatus {
 /// Request to clear output visible on the frontend.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
 pub struct ClearOutput {
-    /// The wait flag, which if true, indicates that the frontend should wait
-    /// for the clear output request to complete before sending further
-    /// messages.
+    /// Wait to clear the output until new output is available to replace it.
     pub wait: bool,
 }
 

@@ -5,9 +5,7 @@
  */
 export type ClearOutput = {
   /**
-   * The wait flag, which if true, indicates that the frontend should wait
-   * for the clear output request to complete before sending further
-   * messages.
+   * Wait to clear the output until new output is available to replace it.
    */
   wait: boolean;
 };

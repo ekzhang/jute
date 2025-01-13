@@ -206,7 +206,7 @@ pub struct CellMetadata {
 pub type CellAttachments = BTreeMap<String, MimeBundle>;
 
 /// MIME bundle for representing various types of data.
-pub type MimeBundle = BTreeMap<String, MultilineString>;
+pub type MimeBundle = BTreeMap<String, Value>;
 
 /// Represents a string or array of strings (multiline).
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, TS)]
@@ -229,13 +229,18 @@ impl From<MultilineString> for String {
     }
 }
 
-impl From<String> for MultilineString {
-    fn from(value: String) -> Self {
-        // Convert a string to a multiline string, mimicking Jupyter.
-        //
-        // Usually, we could just use `MultilineString::Single`, but Jupyter's
-        // behavior is to always return an array, so we respect that. It also
-        // breaks strings after newline characters.
+impl MultilineString {
+    /// Convert a string to a multiline string, mimicking Jupyter.
+    ///
+    /// Usually, we could just use `MultilineString::Single`, but Jupyter's
+    /// behavior is to always return an array, so we respect that. It also
+    /// breaks strings after newline characters.
+    pub fn normalize(&self) -> Self {
+        let value = match self {
+            MultilineString::Single(s) => s,
+            MultilineString::Multi(v) => &v.join(""),
+        };
+
         let mut lines = Vec::new();
         let mut remaining = &value[..];
         while !remaining.is_empty() {
@@ -434,22 +439,22 @@ mod tests {
 
     #[test]
     fn string_to_multiline() {
-        let empty = MultilineString::from("".to_string());
+        let empty = MultilineString::Single("".into()).normalize();
         assert_eq!(empty, MultilineString::Multi(vec![]));
 
-        let single = MultilineString::from("Hello, world!".to_string());
+        let single = MultilineString::Single("Hello, world!".into()).normalize();
         assert_eq!(
             single,
             MultilineString::Multi(vec!["Hello, world!".to_string()])
         );
 
-        let multi = MultilineString::from("Hello,\nworld!".to_string());
+        let multi = MultilineString::Single("Hello,\nworld!".into()).normalize();
         assert_eq!(
             multi,
             MultilineString::Multi(vec!["Hello,\n".to_string(), "world!".to_string()])
         );
 
-        let multi = MultilineString::from("Hello,\n\nworld!\n".to_string());
+        let multi = MultilineString::Single("Hello,\n\nworld!\n".into()).normalize();
         assert_eq!(
             multi,
             MultilineString::Multi(vec![

@@ -1,14 +1,22 @@
 import type { EditorView } from "@codemirror/view";
 import { Channel, invoke } from "@tauri-apps/api/core";
-import { encode } from "html-entities";
+import { WritableDraft } from "immer";
 import { createContext, useContext } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import type { NotebookRoot, RunCellEvent } from "@/bindings";
+import type {
+  NotebookRoot,
+  Output,
+  OutputDisplayData,
+  RunCellEvent,
+} from "@/bindings";
 
 type NotebookStore = NotebookStoreState & NotebookStoreActions;
+
+/** Actions are kept private, only to be used from the `Notebook` class. */
+type NotebookStoreActions = ReturnType<typeof notebookStoreActions>;
 
 /** Zustand reactive data used by the UI to render notebooks. */
 export type NotebookStoreState = {
@@ -20,7 +28,7 @@ export type NotebookStoreState = {
     [cellId: string]: {
       type: CellType;
       initialText: string;
-      output?: NotebookOutput;
+      result?: CellResult;
     };
   };
 
@@ -39,113 +47,190 @@ export type NotebookStoreState = {
 
 export type CellType = "code" | "markdown";
 
-export type NotebookOutput = {
-  status: "success" | "error";
-  output: string;
+export type CellResult = {
+  status: "running" | "success" | "error";
   timings: {
     startedAt: number;
     finishedAt?: number;
   };
-  displays: { [displayId: string]: string };
+  executionCount?: number;
+  outputs?: Output[];
+  displays?: Record<string, number>;
 };
 
-/** Actions are kept private, only to be used from the `Notebook` class. */
-type NotebookStoreActions = {
-  /** Add a new cell to the notebook. */
-  addCell: (id: string, type: CellType, initialText: string) => void;
+function notebookStoreActions(
+  // Updater used by Zustand / Immer to mutate the state.
+  set: (updater: (state: WritableDraft<NotebookStoreState>) => void) => void,
+) {
+  return {
+    /** Add a new cell to the notebook. */
+    addCell: (cellId: string, type: CellType, initialText: string) =>
+      set((state) => {
+        state.cellIds.push(cellId);
+        state.cells[cellId] = {
+          type,
+          initialText,
+        };
+      }),
 
-  /** Set the type of a cell. */
-  setCellType: (id: string, type: CellType) => void;
+    /** Set the type of a cell. */
+    setCellType: (cellId: string, type: CellType) =>
+      set((state) => {
+        state.cells[cellId].type = type;
+      }),
 
-  /** Set the output of a cell after it runs. */
-  setOutput: (cellId: string, output: NotebookOutput | undefined) => void;
+    /** Clear the result of a cell. */
+    clearResult: (cellId: string) =>
+      set((state) => {
+        state.cells[cellId].result = undefined;
+      }),
 
-  /**
-   * Start loading the notebook from an external source.
-   *
-   * After this function is called, no new cell executions should happen until
-   * the notebook finishes loading and one of the functions below is called. If
-   * successful, this clears the current cells.
-   */
-  startLoading: () => void;
+    /** Update properties of a cell result, except the actual `outputs` array. */
+    updateResult: (cellId: string, result: CellResult) =>
+      set((state) => {
+        const obj = state.cells[cellId].result;
+        if (obj) {
+          for (const [key, value] of Object.entries(result)) {
+            // @ts-ignore
+            obj[key] = value;
+          }
+        } else {
+          state.cells[cellId].result = result;
+        }
+      }),
 
-  /** Load the notebook from a JSON object. */
-  loadNotebook: (notebook: NotebookRoot) => void;
+    /** Append outputs to a cell. */
+    appendOutput: (cellId: string, output: Output, displayId?: string) =>
+      set((state) => {
+        const obj = state.cells[cellId].result;
+        if (obj) {
+          if (displayId) {
+            if (output.output_type !== "display_data") {
+              throw new Error("displayId can only be used with display_data");
+            }
+            obj.displays ??= {};
+            obj.displays[displayId] = obj.outputs?.length ?? 0;
+          }
 
-  /** Set the error on failure to load a notebook. */
-  setLoadError: (error: string) => void;
+          obj.outputs = obj.outputs ?? [];
+          if (obj.outputs.length > 0) {
+            const lastOutput = obj.outputs[obj.outputs.length - 1];
+            if (
+              lastOutput.output_type === "stream" &&
+              output.output_type === "stream" &&
+              lastOutput.name === output.name
+            ) {
+              // Concatenate to the last stream output if on the same stream.
+              lastOutput.text = [
+                ...(typeof lastOutput.text === "string"
+                  ? [lastOutput.text]
+                  : lastOutput.text),
+                ...(typeof output.text === "string"
+                  ? [output.text]
+                  : output.text),
+              ];
+              return;
+            }
+          }
 
-  /** Set the path of the notebook, when it is opened or saved. */
-  setPath: (path: string) => void;
-};
+          obj.outputs.push(output);
+        }
+      }),
+
+    /** Clear the output of a cell. */
+    clearOutput: (cellId: string) =>
+      set((state) => {
+        const obj = state.cells[cellId].result;
+        if (obj) {
+          obj.outputs = [];
+          obj.displays = {};
+        }
+      }),
+
+    /** Update an existing `display_data` output. */
+    updateOutputDisplay: (
+      cellId: string,
+      displayId: string,
+      displayData: OutputDisplayData,
+    ) =>
+      set((state) => {
+        const obj = state.cells[cellId].result;
+        if (obj) {
+          const index = obj.displays?.[displayId];
+          if (index !== undefined) {
+            const output = obj.outputs?.[index];
+            if (output && output.output_type === "display_data") {
+              output.data = displayData.data;
+              output.metadata = displayData.metadata;
+            }
+          }
+        }
+      }),
+
+    /**
+     * Start loading the notebook from an external source.
+     *
+     * After this function is called, no new cell executions should happen until
+     * the notebook finishes loading and one of the functions below is called. If
+     * successful, this clears the current cells.
+     */
+    startLoading: () =>
+      set((state) => {
+        // TODO: Fix this to handle errors better.
+        if (state.isLoading) throw new Error("Notebook is already loading");
+        state.isLoading = true;
+      }),
+
+    /** Load the notebook from a JSON object. */
+    loadNotebook: (notebook: NotebookRoot) =>
+      set((state) => {
+        // Filter out 'raw' cells, as they aren't supported yet.
+        const cells = notebook.cells.filter(
+          (cell) => cell.cell_type === "code" || cell.cell_type === "markdown",
+        );
+
+        // Some older notebooks have no cell IDs, so we generate them on import.
+        const cellIds = cells.map((cell) => cell.id ?? uuidv4());
+
+        state.cellIds = cellIds;
+        state.cells = Object.fromEntries(
+          cells.map((cell, i) => [
+            cellIds[i],
+            { type: cell.cell_type, initialText: multiline(cell.source) },
+          ]),
+        );
+        state.isLoading = false;
+        state.loadError = undefined;
+      }),
+
+    /** Set the error on failure to load a notebook. */
+    setLoadError: (error: string) =>
+      set((state) => {
+        state.loadError = error;
+        state.isLoading = false;
+      }),
+
+    /** Set the path of the notebook, when it is opened or saved. */
+    setPath: (path: string) =>
+      set((state) => {
+        state.path = path;
+      }),
+  };
+}
 
 /** Initialize the Zustand store for a notebook and define mutators. */
 function createNotebookStore(): StoreApi<NotebookStore> {
+  // @ts-ignore TypeScript says that the instantiation is too deep, infinite?
   return createStore<NotebookStore>()(
-    immer<NotebookStore>((set) => ({
-      cellIds: [],
-      cells: {},
-      isLoading: false,
-
-      addCell: (cellId, type, initialText) =>
-        set((state) => {
-          state.cellIds.push(cellId);
-          state.cells[cellId] = {
-            type,
-            initialText,
-          };
-        }),
-
-      setCellType: (cellId, type) =>
-        set((state) => {
-          state.cells[cellId].type = type;
-        }),
-
-      setOutput: (cellId, output) =>
-        set((state) => {
-          state.cells[cellId].output = output;
-        }),
-
-      startLoading: () =>
-        set((state) => {
-          // TODO: Fix this to handle errors better.
-          if (state.isLoading) throw new Error("Notebook is already loading");
-          state.isLoading = true;
-        }),
-
-      loadNotebook: (notebook) =>
-        set((state) => {
-          // Filter out 'raw' cells, as they aren't supported yet.
-          const cells = notebook.cells.filter(
-            (cell) =>
-              cell.cell_type === "code" || cell.cell_type === "markdown",
-          );
-
-          // Some older notebooks have no cell IDs, so we generate them on import.
-          const cellIds = cells.map((cell) => cell.id ?? uuidv4());
-
-          state.cellIds = cellIds;
-          state.cells = Object.fromEntries(
-            cells.map((cell, i) => [
-              cellIds[i],
-              { type: cell.cell_type, initialText: multiline(cell.source) },
-            ]),
-          );
-          state.isLoading = false;
-          state.loadError = undefined;
-        }),
-
-      setLoadError: (error) =>
-        set((state) => {
-          state.loadError = error;
-          state.isLoading = false;
-        }),
-
-      setPath: (path) =>
-        set((state) => {
-          state.path = path;
-        }),
-    })),
+    immer<NotebookStore>((set) => {
+      const initialState: NotebookStoreState = {
+        cellIds: [],
+        cells: {},
+        isLoading: false,
+      };
+      const actions: NotebookStoreActions = notebookStoreActions(set);
+      return { ...initialState, ...actions };
+    }),
   );
 }
 
@@ -224,8 +309,8 @@ export class Notebook {
     this.state.setCellType(cellId, type);
   }
 
-  clearOutput(cellId: string) {
-    this.state.setOutput(cellId, undefined);
+  clearResult(cellId: string) {
+    this.state.clearResult(cellId);
   }
 
   async execute(cellId: string) {
@@ -239,66 +324,82 @@ export class Notebook {
     }
     const code = editor.state.doc.toString();
 
-    let status: NotebookOutput["status"] = "success";
-    let output = "";
-    let timings: NotebookOutput["timings"] = { startedAt: Date.now() };
-    let displays: Record<string, any> = {};
+    let status: CellResult["status"] = "running";
+    let timings: CellResult["timings"] = { startedAt: Date.now() };
+    let executionCount: CellResult["executionCount"] = undefined;
 
     const update = () =>
-      this.state.setOutput(cellId, {
+      this.state.updateResult(cellId, {
         status,
-        output,
         timings,
-        displays,
+        executionCount,
       });
     update();
+    this.state.clearOutput(cellId);
+
+    let willClearOutput = false;
 
     try {
       const onEvent = new Channel<RunCellEvent>();
 
       onEvent.onmessage = (message: RunCellEvent) => {
+        console.log(message);
+        if (willClearOutput) {
+          this.state.clearOutput(cellId);
+          willClearOutput = false;
+        }
+
         if (message.event === "stdout" || message.event === "stderr") {
-          output += message.data;
-          update();
+          this.state.appendOutput(cellId, {
+            output_type: "stream",
+            name: message.event,
+            text: message.data,
+          });
+          console.log(this.state.cells[cellId].result);
         } else if (message.event === "error") {
           status = "error";
-          output += `${message.data.ename}: ${message.data.evalue}\n`;
           update();
+          this.state.appendOutput(cellId, {
+            output_type: "error",
+            ename: message.data.ename,
+            evalue: message.data.evalue,
+            traceback: message.data.traceback,
+          });
         } else if (message.event === "execute_result") {
           // This means that there was a return value for the cell.
-          output += message.data.data["text/plain"];
+          executionCount = message.data.execution_count;
           update();
+          this.state.appendOutput(cellId, {
+            output_type: "execute_result",
+            execution_count: message.data.execution_count,
+            data: message.data.data,
+            metadata: message.data.metadata,
+          });
         } else if (message.event === "display_data") {
           const displayId = message.data.transient?.display_id || uuidv4();
-          const html = displayDataToHtml(
-            message.data.data,
-            message.data.metadata,
+          this.state.appendOutput(
+            cellId,
+            {
+              output_type: "display_data",
+              data: message.data.data,
+              metadata: message.data.metadata,
+            },
+            displayId,
           );
-          if (html) {
-            displays = { ...displays, [displayId]: html };
-            update();
-          } else {
-            console.warn("Skipping unhandled display data", message.data);
-          }
         } else if (message.event === "update_display_data") {
           const displayId = message.data.transient?.display_id;
-          if (displayId && Object.hasOwn(displays, displayId)) {
-            const html = displayDataToHtml(
-              message.data.data,
-              message.data.metadata,
-            );
-            if (html) {
-              displays = { ...displays, [displayId]: html };
-              update();
-            } else {
-              console.warn("Skipping unhandled display data", message.data);
-            }
-          } else {
-            console.warn("Skipping display for bad display ID", message.data);
+          if (displayId) {
+            this.state.updateOutputDisplay(cellId, displayId, {
+              data: message.data.data,
+              metadata: message.data.metadata,
+            });
           }
         } else if (message.event === "clear_output") {
-          // TODO: Implement clear_output message type, with `wait=True` support.
-          console.warn("clear_output not implemented yet");
+          if (message.data.wait) {
+            willClearOutput = true;
+          } else {
+            this.state.clearOutput(cellId);
+          }
         } else {
           console.warn("Skipping unhandled event", message);
         }
@@ -309,10 +410,18 @@ export class Notebook {
         code,
         onEvent,
       });
+      if (status === "running") {
+        status = "success";
+      }
     } catch (error: any) {
-      // TODO: Render backtraces properly here, and do not prune existing output.
       status = "error";
-      output += error.toString();
+      // Synthesize an error output for kernel disconnects or other errors.
+      this.state.appendOutput(cellId, {
+        output_type: "error",
+        ename: "InternalError",
+        evalue: error.toString(),
+        traceback: [],
+      });
     } finally {
       timings = { ...timings, finishedAt: Date.now() };
       update();
@@ -323,50 +432,6 @@ export class Notebook {
 /** Helper function to convert a maybe-multiline string to a string. */
 function multiline(string: string | string[]): string {
   return typeof string === "string" ? string : string.join("");
-}
-
-/**
- * Returns the HTML form of a display data message.
- *
- * https://jupyter-client.readthedocs.io/en/stable/messaging.html#display-data
- */
-function displayDataToHtml(
-  data: Record<string, any>,
-  metadata: Record<string, any>,
-): string | null {
-  for (const imageType of [
-    "image/png",
-    "image/jpeg",
-    "image/svg+xml",
-    "image/bmp",
-    "image/gif",
-  ]) {
-    if (Object.hasOwn(data, imageType)) {
-      const value = data[imageType];
-      const alt = String(data["text/plain"] ?? "");
-      const meta = metadata[imageType];
-      if (typeof value === "string") {
-        let image = `<img src="data:${imageType};base64,${encode(value)}" alt="${encode(alt)}"`;
-        if (meta) {
-          if (typeof meta.height === "number" && meta.height > 0) {
-            image += ` height="${meta.height}"`;
-          }
-          if (typeof meta.width === "number" && meta.width > 0) {
-            image += ` width="${meta.width}"`;
-          }
-        }
-        image += " />";
-        return image;
-      }
-    }
-  }
-
-  const value = data["text/plain"];
-  if (typeof value === "string") {
-    return `<pre>${encode(value)}</pre>`;
-  }
-
-  return null;
 }
 
 export const NotebookContext = createContext<Notebook | undefined>(undefined);

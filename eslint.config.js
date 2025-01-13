@@ -25,6 +25,7 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
+      "@typescript-eslint/ban-ts-comment": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "n/prefer-node-protocol": "warn",
     },
