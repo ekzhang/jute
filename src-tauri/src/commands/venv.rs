@@ -6,7 +6,7 @@ use ini::Ini;
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_shell::ShellExt;
-use tracing::info;
+use tracing::{error, info};
 
 use crate::{
     entity::{Entity, EntityId},
@@ -75,16 +75,41 @@ pub async fn venv_create(python_version: &str, app: AppHandle) -> Result<EntityI
         .output()
         .await?;
 
-    if output.status.success() {
-        info!("created venv at {venv_path:?}");
-        Ok(venv_id)
-    } else {
+    if !output.status.success() {
         let message = String::from_utf8_lossy(&output.stderr);
-        Err(Error::Subprocess(io::Error::new(
+        return Err(Error::Subprocess(io::Error::new(
             io::ErrorKind::Other,
             message.trim(),
-        )))
+        )));
     }
+
+    info!("created venv at {venv_path:?}");
+    let venv_python_path = venv_path.join("bin/python");
+
+    let packages = ["ipykernel", "black", "basedpyright"];
+
+    let output = app
+        .shell()
+        .sidecar("uv")?
+        .args(["--color", "never"])
+        .args(["pip", "install"])
+        .arg("--python")
+        .arg(&venv_python_path)
+        .args(packages)
+        .output()
+        .await?;
+
+    if !output.status.success() {
+        error!("failed to install packages in venv, will remove");
+        _ = tokio::fs::remove_dir_all(&venv_path).await;
+        let message = String::from_utf8_lossy(&output.stderr);
+        return Err(Error::Subprocess(io::Error::new(
+            io::ErrorKind::Other,
+            message.trim(),
+        )));
+    }
+
+    Ok(venv_id)
 }
 
 /// List item returned by [`venv_list`].
@@ -102,9 +127,11 @@ pub struct VenvListItem {
 pub async fn venv_list(app: AppHandle) -> Result<Vec<VenvListItem>, Error> {
     let venv_dir = app.path().app_data_dir()?.join("venv");
     let mut venvs = Vec::new();
-    let mut it = tokio::fs::read_dir(venv_dir)
-        .await
-        .map_err(Error::Filesystem)?;
+    let mut it = match tokio::fs::read_dir(venv_dir).await {
+        Ok(it) => it,
+        Err(err) if err.kind() == io::ErrorKind::NotFound => return Ok(venvs),
+        Err(err) => return Err(Error::Filesystem(err)),
+    };
     while let Some(entry) = it.next_entry().await.map_err(Error::Filesystem)? {
         if entry.file_type().await.is_ok_and(|f| f.is_dir()) {
             if let Ok(venv_id) = entry.file_name().into_string() {
