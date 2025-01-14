@@ -27,6 +27,7 @@
     "@tauri-apps/plugin-fs": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.3",
     "clsx": "^2.1.1",
+    "cmdk": "^1.0.4",
     "html-entities": "^2.5.2",
     "immer": "^10.1.1",
     "lucide-react": "^0.469.0",

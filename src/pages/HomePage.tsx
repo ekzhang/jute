@@ -71,7 +71,7 @@ const simpleNotebook = {
 export default function HomePage() {
   const [, navigate] = useLocation();
   return (
-    <div>
+    <div className="h-screen overflow-y-auto">
       <Header />
       <div className="px-8 py-20">
         <h1 className="mb-2.5 text-4xl">Welcome to Jute</h1>

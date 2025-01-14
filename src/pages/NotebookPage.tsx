@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useSearch } from "wouter";
 
 import { Notebook, NotebookContext } from "@/stores/notebook";
+import NotebookCommandMenu from "@/ui/notebook/NotebookCommandMenu";
 import NotebookFooter from "@/ui/notebook/NotebookFooter";
 import NotebookHeader from "@/ui/notebook/NotebookHeader";
 import NotebookView from "@/ui/notebook/NotebookView";
@@ -21,11 +22,12 @@ export default function NotebookPage() {
   }, [notebook, path, inline]);
 
   return (
-    <main className="absolute inset-0 bg-white">
+    <main className="h-screen bg-white">
       <NotebookContext.Provider value={notebook}>
         <NotebookHeader kernelName="Local Kernel (Python 3.11.7)" />
         <NotebookView />
         <NotebookFooter />
+        <NotebookCommandMenu />
       </NotebookContext.Provider>
     </main>
   );
