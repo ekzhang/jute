@@ -169,6 +169,26 @@ def main() -> None:
     # Allow some time for the hover response
     time.sleep(1)
 
+    definition_request: MessageDict = {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "textDocument/definition",
+        "params": {
+            "textDocument": {
+                "uri": "file:///fake/path/sample.py"  # Match the opened file
+            },
+            "position": {
+                # Hover over the first character of "print"
+                "line": 0,
+                "character": 0,
+            },
+        },
+    }
+    write_message(proc, definition_request)
+
+    # Allow some time for the definition response
+    time.sleep(1)
+
     # --------------------------------------------------------------------------
     # 5) Shutdown request & exit notification
     # --------------------------------------------------------------------------
