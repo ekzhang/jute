@@ -7,6 +7,7 @@ import { StoreApi, createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
 import type {
+  Cell,
   NotebookRoot,
   Output,
   OutputDisplayData,
@@ -95,6 +96,7 @@ function notebookStoreActions(
             obj[key] = value;
           }
         } else {
+          // @ts-ignore Type instantiation is excessively deep and possibly infinite.
           state.cells[cellId].result = result;
         }
       }),
@@ -296,6 +298,43 @@ export class Notebook {
   /** Access the current value of the notebook store, non-reactively. */
   get state() {
     return this.store.getState();
+  }
+
+  /** Save this notebook as an nbformat JSON object. */
+  export(): NotebookRoot {
+    const cells: Cell[] = [];
+    const state = this.state;
+
+    for (const cellId of state.cellIds) {
+      const cell = state.cells[cellId];
+      const source = this.refs.get(cellId)?.editor?.state.doc.toString() ?? "";
+      if (cell.type === "code") {
+        cells.push({
+          cell_type: "code",
+          id: cellId,
+          source,
+          execution_count: cell.result?.executionCount ?? null,
+          outputs: cell.result?.outputs ?? [],
+          metadata: {},
+        });
+      } else if (cell.type === "markdown") {
+        cells.push({
+          cell_type: "markdown",
+          id: cellId,
+          source,
+          metadata: {},
+        });
+      } else {
+        throw new Error(`Unknown cell type: ${cell.type}`);
+      }
+    }
+
+    return {
+      nbformat: 4,
+      nbformat_minor: 5,
+      metadata: {}, // TODO: Add metadata.
+      cells,
+    };
   }
 
   /** Load a notebook from a direct object. */
