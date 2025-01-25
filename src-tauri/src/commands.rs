@@ -2,7 +2,7 @@
 
 use std::env;
 
-use sysinfo::System;
+use sysinfo::{Pid, System};
 use tauri::ipc::Channel;
 use tracing::info;
 
@@ -18,14 +18,38 @@ use crate::{
 
 pub mod venv;
 
-/// Measure the current system CPU usage. (unused, for future reference)
+/// Measure the kernel's CPU and memory usage as a percentage of total system
+/// resources.
 #[tauri::command]
-pub async fn cpu_usage() -> f32 {
-    let mut system = System::new();
-    system.refresh_cpu();
+pub async fn kernel_usage_info(
+    kernel_id: &str,
+    _state: tauri::State<'_, State>,
+) -> Result<(f32, f32), Error> {
+    // find the pid from _state.kernels
+    let kernel = _state.kernels.get(kernel_id).ok_or(Error::KernelNotFound)?;
+
+    let pid: Pid = Pid::from_u32(kernel.pid().ok_or(Error::KernelProcessNotFound)?);
+
+    let mut system = System::new_all();
+    system.refresh_all();
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-    system.refresh_cpu();
-    system.global_cpu_info().cpu_usage()
+    system.refresh_process(pid);
+
+    if let Some(process) = system.process(pid) {
+        let cpu_usage_pct = process.cpu_usage() / system.cpus().len() as f32 * 100.0;
+
+        let total_memory_kb = system.total_memory(); // Total system memory in KB
+        let process_memory_kb = process.memory(); // Process memory usage in KB
+        let memory_usage_pct = if total_memory_kb > 0 {
+            (process_memory_kb as f32 / total_memory_kb as f32) * 100.0
+        } else {
+            0.0
+        };
+
+        Ok((cpu_usage_pct, memory_usage_pct))
+    } else {
+        Err(Error::KernelProcessNotFound)
+    }
 }
 
 /// Start a new Jupyter kernel.

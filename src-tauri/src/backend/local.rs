@@ -117,6 +117,11 @@ impl LocalKernel {
     pub async fn kill(&mut self) -> Result<(), Error> {
         self.child.kill().await.map_err(Error::Subprocess)
     }
+
+    /// Get the pid of the kernel process.
+    pub fn pid(&self) -> Option<u32> {
+        self.child.id()
+    }
 }
 
 async fn get_available_port() -> Result<u16, Error> {
