@@ -9,7 +9,7 @@ use tracing::info;
 use crate::{
     backend::{
         commands::{self, RunCellEvent},
-        local::{environment, LocalKernel},
+        local::{environment, KernelUsageInfo, LocalKernel},
         notebook::NotebookRoot,
     },
     state::State,
@@ -23,10 +23,10 @@ pub mod venv;
 #[tauri::command]
 pub async fn kernel_usage_info(
     kernel_id: &str,
-    _state: tauri::State<'_, State>,
-) -> Result<(f32, f32), Error> {
+    state: tauri::State<'_, State>,
+) -> Result<KernelUsageInfo, Error> {
     // find the pid from _state.kernels
-    let kernel = _state.kernels.get(kernel_id).ok_or(Error::KernelNotFound)?;
+    let kernel = state.kernels.get(kernel_id).ok_or(Error::KernelNotFound)?;
 
     let pid: Pid = Pid::from_u32(kernel.pid().ok_or(Error::KernelProcessNotFound)?);
 
@@ -36,17 +36,18 @@ pub async fn kernel_usage_info(
     system.refresh_process(pid);
 
     if let Some(process) = system.process(pid) {
-        let cpu_usage_pct = process.cpu_usage() / system.cpus().len() as f32 * 100.0;
+        let cpu_total = system.cpus().len();
+        let cpu_used = process.cpu_usage();
 
-        let total_memory_kb = system.total_memory(); // Total system memory in KB
-        let process_memory_kb = process.memory(); // Process memory usage in KB
-        let memory_usage_pct = if total_memory_kb > 0 {
-            (process_memory_kb as f32 / total_memory_kb as f32) * 100.0
-        } else {
-            0.0
-        };
+        let total_memory_kb = system.total_memory();
+        let process_memory_kb = process.memory();
 
-        Ok((cpu_usage_pct, memory_usage_pct))
+        Ok(KernelUsageInfo {
+            cpu_consumed: cpu_used,
+            cpu_available: cpu_total as f32,
+            memory_consumed: process_memory_kb as f32,
+            memory_available: total_memory_kb as f32,
+        })
     } else {
         Err(Error::KernelProcessNotFound)
     }
