@@ -4,7 +4,7 @@ use std::{
     process::{exit, Command},
 };
 
-use jute::backend::{commands::RunCellEvent, notebook::NotebookRoot};
+use jute::backend::{commands::RunCellEvent, local::KernelUsageInfo, notebook::NotebookRoot};
 use ts_rs::TS;
 
 fn main() {
@@ -29,6 +29,7 @@ fn main() {
 
     NotebookRoot::export_all_to(export_path).unwrap();
     RunCellEvent::export_all_to(export_path).unwrap();
+    KernelUsageInfo::export_all_to(export_path).unwrap();
 
     // Generate `index.ts` file
     println!("Generating index.ts...");

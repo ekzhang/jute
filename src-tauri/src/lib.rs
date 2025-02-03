@@ -28,6 +28,14 @@ pub enum Error {
     #[error("disconnected from the kernel")]
     KernelDisconnect,
 
+    /// Could not find the kernel.
+    #[error("kernel not found")]
+    KernelNotFound,
+
+    /// Could not find the kernel process.
+    #[error("kernel process not found")]
+    KernelProcessNotFound,
+
     /// An invalid URL was provided or constructed.
     #[error("invalid URL: {0}")]
     InvalidUrl(#[from] url::ParseError),

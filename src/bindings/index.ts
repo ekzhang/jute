@@ -3,6 +3,7 @@ export * from "./ClearOutput";
 export * from "./OutputDisplayData";
 export * from "./CodeMirrorMode";
 export * from "./OutputStream";
+export * from "./KernelUsageInfo";
 export * from "./CodeCell";
 export * from "./ErrorReply";
 export * from "./RunCellEvent";

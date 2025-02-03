@@ -6,9 +6,11 @@
 
 use std::process::Stdio;
 
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::fs;
 use tokio::net::TcpListener;
+use ts_rs::TS;
 use uuid::Uuid;
 
 use self::environment::KernelSpec;
@@ -16,6 +18,22 @@ use super::{create_zeromq_connection, KernelConnection};
 use crate::Error;
 
 pub mod environment;
+
+/// Contains information about the CPU and memory usage of a kernel.
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+pub struct KernelUsageInfo {
+    /// Number of CPUs used.
+    pub cpu_consumed: f32,
+
+    /// Number of CPUs available.
+    pub cpu_available: f32,
+
+    /// Memory consumed in KB.
+    pub memory_consumed: f32,
+
+    /// Memory available in KB.
+    pub memory_available: f32,
+}
 
 /// Represents a connection to an active kernel.
 pub struct LocalKernel {
@@ -116,6 +134,11 @@ impl LocalKernel {
     /// Kill the kernel by sending a SIGKILL signal.
     pub async fn kill(&mut self) -> Result<(), Error> {
         self.child.kill().await.map_err(Error::Subprocess)
+    }
+
+    /// Get the pid of the kernel process.
+    pub fn pid(&self) -> Option<u32> {
+        self.child.id()
     }
 }
 
